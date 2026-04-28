@@ -2,7 +2,7 @@
  * \license SPDX-License-Identifier: MIT
  * \file packconv.sv
  * \brief 合并数组信号与非合并数组信号之间的转换
- * \author johnyork@yeah.net
+ * \author JohnYork <johnyork@yeah.net>
  */
 module array_packed2unpacked #(
    parameter int UNITBITW = 32,

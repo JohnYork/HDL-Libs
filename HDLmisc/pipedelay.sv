@@ -1,8 +1,9 @@
 /*!
+ * \license SPDX-License-Identifier: MIT
  * \file pipedelay.sv
  * \brief 流水线数据同步保持器
  * \details 本模块用于按延时输出计划比特位图对输入数据做时序延迟
- * \author 钟勇
+ * \author JohnYork <johnyork@yeah.net>
  * \depends miscs, packconv
  */
 `include "miscs.svh"

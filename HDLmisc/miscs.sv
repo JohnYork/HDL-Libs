@@ -2,7 +2,7 @@
  * \license SPDX-License-Identifier: MIT
  * \file miscs.sv
  * \brief 部分通用工具类函数
- * \author johnyork@yeah.net
+ * \author JohnYork <johnyork@yeah.net>
  */
 `define __INC_FROM_MISCS__
 `include "miscs.svh"

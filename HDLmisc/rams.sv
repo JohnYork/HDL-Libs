@@ -2,7 +2,7 @@
  * \license SPDX-License-Identifier: MIT
  * \file rams.sv
  * \brief RAM、RAM数组、RAM数组合并非数组元素位宽RAM
- * \author johnyork@yeah.net
+ * \author JohnYork <johnyork@yeah.net>
  * \depends miscs, packconv
  */
 `include "miscs.svh"

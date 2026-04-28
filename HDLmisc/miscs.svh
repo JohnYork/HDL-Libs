@@ -24,7 +24,7 @@
  * -# FFT_xxx ，FFT核配置参数，可配置的有：
  *    - #FFT_AUTOGEN_TWROM_LOG2PTS_LIMIT ，定义FFT核旋转因子自动生成的点数限制，该门限大于0且旋转因子乘法对应的点数超过该门限时，程序将从文件中读取旋转因子参数表，否则
  * 自动生成参数表，未定义该宏时默认使用参数 0 。
- * \author johnyork@yeah.net
+ * \author JohnYork <johnyork@yeah.net>
  */
 /* -- SystemVerilog头文件宏模板
 
