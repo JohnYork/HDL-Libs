@@ -223,6 +223,48 @@ package miscs;
       else                    return bits_of_longint((~value), maxbitw-1) + 1;
    endfunction
    /*!
+    * \brief 无符号整数乘法结果最小位宽
+    * \param bitwofA 乘法输入参数A位宽
+    * \param bitwofB 乘法输入参数B位宽
+    * \return int型，无符号整数乘法结果最小位宽
+    */
+   function automatic int minresbitw_of_unsignedint_multiply(int bitwofA, int bitwofB);
+      int resbitw;
+      resbitw = bitwofA + bitwofB;
+      if (bitwofA == 1 || bitwofB == 1) resbitw = resbitw - 1; // 其中有一个乘数位宽仅为1时，该乘数的值域范围为{0，1}，最大值仅为1，乘法结果最大位宽不会超过另一个乘数的位宽
+      return resbitw;
+   endfunction
+   /*!
+    * \brief 根据无符号整数乘法结果最小位宽计算输入参数位宽
+    * \param resbitw  无符号整数乘法结果最小位宽
+    * \param arg2bitw 第二输入参数位宽
+    * \return 第一输入参数位宽
+    */
+   function automatic int argbitw_of_unsignedint_multiply_minresbitw(int resbitw, int arg2bitw);
+      if (arg2bitw == 1) return resbitw;
+      else               return resbitw - arg2bitw;
+   endfunction
+   /*!
+    * \brief 有符号整数乘法结果最小位宽
+    * \param bitwofA 乘法输入参数A位宽（包括符号位）
+    * \param bitwofB 乘法输入参数B位宽（包括符号位）
+    * \return int型，有符号整数乘法结果最小位宽
+    */
+   function automatic int minresbitw_of_signedint_multiply(int bitwofA, int bitwofB);
+      /* \attention 与无符号整数不同，有符号整数当除去符号位的有效位数为1时，该整数所能表示的数的范围为{-2,-1,0,+1}，取-2时乘法结果仍然涉及到扩位。
+       因此有效位数为1时不能参考无符号整数乘法的结果最小位宽计算方法 */
+      return 1/*结果符号位*/ + (bitwofA - 1)/*A的数据位宽*/ + (bitwofB - 1)/*B的数据位宽*/;
+   endfunction
+   /*!
+    * \brief 根据有符号整数乘法结果最小位宽计算输入参数位宽
+    * \param resbitw  有符号整数乘法结果最小位宽
+    * \param arg2bitw 第二输入参数位宽
+    * \return 第一输入参数位宽
+    */
+   function automatic int argbitw_of_signedint_multiply_minresbitw(int resbitw, int arg2bitw);
+      return resbitw - 1/*结果位宽*/ - (arg2bitw - 1)/*第二输入参数有效位宽*/ + 1/*第一输入参数符合位*/;
+   endfunction
+   /*!
     * \brief 统计输入整数中给定比特值的位数
     * \param value   待统计比特值的整数
     * \param maxbits 输入整数的二进制位数
