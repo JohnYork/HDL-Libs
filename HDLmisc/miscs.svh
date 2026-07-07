@@ -275,6 +275,69 @@ package miscs;
    function automatic int delaytaps4stage(int stagecnt, int istage, int totaltaps, bit top_first);
       return delaytaps4stagerange(stagecnt, istage, istage, totaltaps, top_first);
    endfunction
+   /*! \brief 求绝对值 */
+   function automatic int signed absi(int signed x);
+      return (x >= 0) ? x : -x;
+   endfunction
+   function automatic longint signed absil(longint signed x);
+      return (x >= 0) ? x : -x;
+   endfunction
+   /*! \brief 选取最大值 */
+   function automatic int unsigned maxu(int unsigned x, int unsigned y);
+      return x > y ? x : y;
+   endfunction
+   function automatic int signed maxi(int signed x, int signed y);
+      return x > y ? x : y;
+   endfunction
+   function automatic longint unsigned maxul(longint unsigned x, longint unsigned y);
+      return x > y ? x : y;
+   endfunction
+   function automatic longint signed maxil(longint signed x, longint signed y);
+      return x > y ? x : y;
+   endfunction
+   /*! \brief 选取最小值 */
+   function automatic int unsigned minu(int unsigned x, int unsigned y);
+      return x < y ? x : y;
+   endfunction
+   function automatic int signed mini(int signed x, int signed y);
+      return x < y ? x : y;
+   endfunction
+   function automatic longint unsigned minul(longint unsigned x, longint unsigned y);
+      return x < y ? x : y;
+   endfunction
+   function automatic longint signed minil(longint signed x, longint signed y);
+      return x < y ? x : y;
+   endfunction
+   /*!
+    * \brief Euclid法(辗转相除法)求两个正整数的最大公约数
+    * \param x, y 待求公约数的两个正整数
+    * \return longint unsigned型，x和y的最大公约数
+    */
+   function automatic longint unsigned gcd(longint unsigned xi, longint unsigned yi);
+      longint unsigned r, x, y;
+      x = xi;
+      y = yi;
+      if (x < y) begin
+         r = x;   x = y;   y = r;
+      end
+      r = x % y;
+      while(r > 0) begin
+         x = y;
+         y = r;
+         r = x % y;
+      end
+      return y;
+   endfunction
+   /*!
+    * \brief 求两个正整数的最小公倍数
+    * \param x, y 待求公倍数的两个正整数
+    * \return longint unsigned型，x和y的最小公倍数
+    */
+   function automatic longint unsigned lcm(longint unsigned x, longint unsigned y);
+      longint unsigned g;
+      g = gcd(x, y);
+      return (x/g)*y;
+   endfunction
 endpackage
  `endif//__MISCS_PKG__
 `else
