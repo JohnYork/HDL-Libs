@@ -380,6 +380,268 @@ package miscs;
       g = gcd(x, y);
       return (x/g)*y;
    endfunction
+   /*!
+    * \brief 整型数求平方根
+    * \param val 待求平方根的整型数
+    * \return int型，输入整型数的平方根
+    */
+   function automatic int unsigned isqrt(longint unsigned val);
+      longint unsigned res, res_cmp;
+      int cntr;
+      res = (val>>1);
+      res_cmp = 0;
+      cntr = 0;
+      while((res*res - val != 0 || res != res_cmp) && cntr < 1000) begin
+         res_cmp = res;
+         res = (res>>1) + ((val/res)>>1);
+         cntr = cntr + 1;
+      end
+      return unsigned'(int'(res));
+   endfunction
+   /*!
+    * \typedef divres_t
+    * \brief 定点除法结果结构体
+    */
+   typedef struct packed {
+      bit               neg;                       // 商为负数标志，1'b1-商是负数，1'b0-商是非负数
+      longint unsigned  intp;                      // 商的整数部分，最多64位
+      longint unsigned  frac;                      // 商的小数部分，最多64位
+   } divres_t;
+   /*!
+    * \brief 64位定点除法运算
+    * \param divd 被除数，最多64位（包含符号位）
+    * \param divs 除数，最多64位（包含符号位）
+    * \return divres_t型，除法结果
+    */
+   function automatic divres_t fixdiv(longint signed divd, longint signed divs);
+      divres_t res;
+      longint unsigned udd, udv, tmp;
+      int i, ibc;
+      res.neg = 1'b0;
+      res.intp = 0;
+      res.frac = 0;
+      udd = 0;
+      udv = 0;
+      if (divs == 0) begin
+         $error("fixdiv : zero divisor is not allowed!");
+         return res;
+      end
+      if (divs < 0) begin
+         udv = unsigned'(-divs);
+         res.neg ^= 1'b1;
+      end else udv = unsigned'(divs);
+      if (divd == 0) return res;
+      if (divd < 0) begin
+         udd = unsigned'(-divd);
+         res.neg ^= 1'b1;
+      end else udd = unsigned'(divd);
+      // 统计结果的整数部分位数，同时对齐除数与被除数的最高位
+      for (ibc = 0, tmp = udv; tmp < udd; ibc++) begin
+         udv = tmp;
+         tmp <<= 1;
+      end
+      // 商的整数部分
+      if (ibc <= 0) udd <<= 1;
+      else begin
+         while (ibc > 0) begin
+            res.intp <<= 1;
+            if (udd >= udv) begin
+               res.intp |= 1;
+               udd -= udv;
+            end
+            udd <<= 1;
+            ibc--;
+         end
+      end
+      // 商的小数部分
+      for (i = 0; i <= 63; i++) begin
+         res.frac <<= 1;
+         if (udd >= udv) begin
+            res.frac |= 1;
+            udd -= udv;
+         end
+         udd <<= 1;
+      end
+      return res;
+   endfunction
+   /*!
+    * \brief 定点除法结果转换定点数
+    * \param divres   定点除法结果
+    * \param fracbits 定点数小数位数，<= 63
+    * \return longint signed型定点数
+    */
+   function automatic longint signed divres2qfix(divres_t dr, int unsigned fracbits);
+      longint signed res;
+      int signed intbits;
+      if (fracbits > 63) begin
+         $warning("divres2qfix : fracbits(%0d) which is greator than 63 will be forced to 63 defaultly!", fracbits);
+         fracbits = 63;
+      end
+      intbits = 63 - fracbits;
+      if (bits_of_longint(dr.intp, 64) > intbits) begin
+         $error("divres2qfix : OVERFLOW on integer part! integer part bitwidth(%0d) of specified fixpoint format(fracbits = %0d) can not hold all the integer part of result, it requires fracbits to be %0d bits or less.", intbits, fracbits, 63 - bits_of_longint(dr.intp, 64));
+         return 0;
+      end
+      if (intbits > 0) res = (dr.intp<<fracbits);
+      res |= (dr.frac>>(64 - fracbits));
+      res += ((dr.frac>>(64 - fracbits - 1))&1);
+      if (dr.neg) res = -res;
+      return res;
+   endfunction
+   /*!
+    * \brief Q.61型数乘法
+    * \param q61x Q.61型被乘数
+    * \param q61y Q.61型乘数
+    * \return Q.61型乘法运算结果
+    */
+   function automatic longint signed q61mult(longint signed q61xi, longint signed q61yi);
+      longint signed q61x, q61y, res, tmp, xh, xl, yh, yl;
+      bit sign;
+      sign = 1'b0;
+      if (q61xi < 64'sd0) begin
+         sign = ~sign;
+         q61x = -q61xi;
+      end
+      else q61x = q61xi;
+      if (q61yi < 64'sd0) begin
+         sign = ~sign;
+         q61y = -q61yi;
+      end
+      else q61y = q61yi;
+      xh = q61x>>>31; xl = q61x&(~((longint'(signed'(-1)))<<31)); // x.h30, x.l31
+      yh = q61y>>>30; yl = q61y&(~((longint'(signed'(-1)))<<30)); // y.h31, y.l30
+      res = xh * yh;    // (x.h30 * y.h31) ... (x.l31 ... y.l30), 结果位数：61(msbs)，总位数：122，去掉低61位，保留高61位，右移位数：0
+      tmp = xh * yl;    // (x.h30 * y.l30) ...                  , 结果位数：60(msbs)，总位数：91， 去掉低61位，保留高30位，右移位数：30
+      res = res + (tmp>>>30);
+      tmp = xl * yh;    // (x.l31 * y.h31) ...                  , 结果位数：62(msbs)，总位数：92， 去掉低61位，保留高31位，右移位数：31
+      res = res + (tmp>>>31);
+      if (sign) res = -res;
+      return res;
+   endfunction
+   /*!
+    * \brief Q.61数的sin/sinh函数实现核
+    * \param q61phs          输入的Q.61相位值，单位：弧度，输入值域范围：-7244019458077122842(-pi) ～ +7244019458077122842(pi)
+    * \param hyperbolic_mode 双曲坐标计算模式：0-圆坐标计算模式（计算sin函数）；1-计算双曲正弦函数；2-计算双曲余弦函数
+    * \return Q.61型sin/sinh函数值
+    * \attention 参考Q.61型数的'1'的整型值为：(1<<61)
+    */
+   function automatic longint signed q61_sin_sinh_core(
+      longint signed q61phs,
+      int            hyperbolic_mode
+   );
+      longint signed divdr, divdr_factbegin, tmp, itcntr, phs2it, res;
+      bit[1:0] calcfn;
+      bit neg, calcsign;
+      res = 0;
+      neg = 0;
+      calcsign = 0;
+      if (hyperbolic_mode == 0) begin
+         calcfn = 2'b00;
+         // calcfn:计算方式
+         // 00 : sin(phs)
+         // 01 : cos(pi/2 - phs)
+         // 10 : cos(phs - pi/2)
+         // 11 : sin(pi  -  phs)
+         if (q61phs < 0) begin
+            q61phs = -q61phs;
+            neg = neg ^ 1'b1;
+         end
+         if (q61phs >= q61_pi) begin
+            q61phs = q61phs - q61_pi;
+            neg = neg ^ 1'b1;
+         end
+         phs2it = q61phs;
+         if (q61phs >= q61_pi/4) begin
+            phs2it = q61_pi/2 - q61phs;
+            calcfn = 2'b01;
+            if (q61phs >= q61_pi/2) begin
+               phs2it = q61phs - q61_pi/2;
+               calcfn = 2'b10;
+               if (q61phs >= q61_pi/2 + q61_pi/4) begin
+                  phs2it = q61_pi - q61phs;
+                  calcfn = 2'b11;
+               end
+            end
+         end
+      end
+      else if (hyperbolic_mode == 1) begin
+         calcfn = 2'b00;
+         if (q61phs < 0) begin
+            q61phs = -q61phs;
+            neg = neg ^ 1'b1;
+         end
+         phs2it = q61phs;
+      end
+      else if (hyperbolic_mode == 2) begin
+         calcfn = 2'b01;
+         if (q61phs < 0) begin
+            q61phs = -q61phs;
+         end
+         phs2it = q61phs;
+      end
+      if (^calcfn) begin
+         /*
+            cos(x) = 1 - x^2/2 + x^4/4! - x^6/6! + ...
+          */
+         divdr_factbegin = 0;
+         tmp = 1<<61;
+      end
+      else begin
+         /*
+            sin(x) = x - x^3/3! + x^5/5! - x^7/7! + ...
+          */
+         divdr_factbegin = 1;
+         tmp = phs2it;
+      end
+      res = 0;
+      itcntr = 0;
+      divdr = divdr_factbegin;
+      while (tmp != 0) begin
+         if (itcntr > 10000) begin
+            $warning("q61sin: iteration times(%0d) are too much to complete!", itcntr);
+            break;
+         end
+         if (hyperbolic_mode > 0) res += tmp;
+         else begin
+            if (calcsign) res -= tmp;
+            else          res += tmp;
+            calcsign ^= 1;
+         end
+         divdr = divdr + 1;
+         tmp = q61mult(tmp, phs2it/divdr);
+         divdr = divdr + 1;
+         tmp = q61mult(tmp, phs2it/divdr);
+         itcntr = itcntr + 1;
+      end
+      if (neg) res = -res;
+      return res;
+   endfunction
+   /*!
+    * \brief Q.61数的sin函数实现
+    * \param q61phs 输入的Q.61相位值，单位：弧度，输入值域范围：-7244019458077122842(-pi) ～ +7244019458077122842(pi)
+    * \return Q.61型sin函数值
+    * \attention 参考Q.61型数的'1'的整型值为：(1<<61)
+    */
+   function automatic longint signed q61sin(
+      longint signed q61phs
+   );
+      return q61_sin_sinh_core(.q61phs(q61phs), .hyperbolic_mode(0));
+   endfunction
+   /*!
+    * \brief Q.61数的cos函数实现
+    * \param q61phs 输入的Q.61相位值，单位：弧度，输入值域范围：-7244019458077122842(-pi) ～ +7244019458077122842(pi)
+    * \return Q.61型cos函数值
+    * \attention 参考Q.61型数的'1'的整型值为：(1<<61)
+    */
+   function automatic longint signed q61cos(
+      longint signed q61phs
+   );
+      longint signed calcphs, halfpi;
+      halfpi = q61_pi/2;
+      if (q61phs < -halfpi)calcphs = (q61phs + q61_pi) - halfpi;
+      else                 calcphs = (halfpi - q61phs);
+      return q61_sin_sinh_core(.q61phs(calcphs),.hyperbolic_mode(0));
+   endfunction
    /*! \brief 对数运算用到的部分常量 */
    localparam int signed  q30_root2_2            = ((1.4142135623730950488016887242097 +0.0000000004656612873077392578125)*2**30);
    localparam int signed  q30_root4_2            = ((1.1892071150027210667174999705605 +0.0000000004656612873077392578125)*2**30);
