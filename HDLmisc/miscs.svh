@@ -519,6 +519,121 @@ package miscs;
       return res;
    endfunction
    /*!
+   /*!
+    * \brief 计算两个Q.61型数的平方和或平方差的平方根
+    * \param q61x               Q.61型数x
+    * \param q61y               Q.61型数y
+    * \param sqrt_of_diff_sqrxy 计算 sqrt(x^2 - y^2) 标志，1'b0-计算 sqrt(x^2 + y^2) 1'b1-计算 sqrt(x^2 - y^2) 
+    * \return Q.61型数平方和或者平方差的平方根运算结果
+    */
+   function automatic longint unsigned q61sqrt2(longint signed q61x, longint signed q61y, bit sqrt_of_diff_sqrxy);
+      longint signed divres, sqres, multscal, itsres, sres;
+      if (q61x < 0) q61x = -q61x;
+      if (q61y < 0) q61y = -q61y;
+      if (q61x == q61y) begin
+         multscal = q61x;
+         if (sqrt_of_diff_sqrxy) itsres = 0;
+         else                    itsres   = longint'(1.4142135623730950488016887242097*((longint'(2))**61));
+      end else begin
+         longint signed ittmp, tmp2it;
+         int signed itcntr;
+         if (q61x < q61y) begin
+            multscal = q61y;
+            divres = q61div(q61x, q61y);
+         end else begin
+            multscal = q61x;
+            divres = q61div(q61y, q61x);
+         end
+         sqres = q61mult(divres, divres);
+         if (sqrt_of_diff_sqrxy) sqres = -sqres;
+         itsres = ((longint'(2))**61);
+         ittmp = sqres/2;
+         itsres += ittmp;
+         itcntr = 4;//2*n
+         do begin
+            divres = q61div(itcntr - 3, itcntr);
+            tmp2it = -q61mult(sqres, divres);
+            ittmp  = q61mult(ittmp, tmp2it);
+            itsres += ittmp;
+            itcntr += 2;
+         end while(ittmp != 0 && itcntr < 1000);
+      end
+      sres = q61mult(itsres, multscal);
+      return unsigned'(sres);
+   endfunction
+   /*!
+    * \brief 计算两个Q.61型数的平方和或平方差的倒数平方根
+    * \param q61x                Q.61型数x
+    * \param q61y                Q.61型数y
+    * \param rsqrt_of_diff_sqrxy 计算 rsqrt(x^2 - y^2) 标志，1'b0-计算 rsqrt(x^2 + y^2) 1'b1-计算 rsqrt(x^2 - y^2) 
+    * \return Q.61型数平方和或平方差的倒数平方根运算结果
+    */
+   function automatic longint unsigned q61rsqrt2(longint signed q61x, longint signed q61y, bit rsqrt_of_diff_sqrxy);
+      longint signed divres, sqres, divscal, itsres, sres;
+      if (q61x < 0) q61x = -q61x;
+      if (q61y < 0) q61y = -q61y;
+      if (q61x == q61y) begin
+         divscal = q61x;
+         if (rsqrt_of_diff_sqrxy)itsres = 64'hFFFFFFFFFFFFFFFF;// 除零溢出
+         else                    itsres   = longint'(1.4142135623730950488016887242097*((longint'(2))**60));
+      end else begin
+         longint signed ittmp, tmp2it;
+         int signed itcntr;
+         if (q61x < q61y) begin
+            divscal = q61y;
+            divres = q61div(q61x, q61y);
+         end else begin
+            divscal = q61x;
+            divres = q61div(q61y, q61x);
+         end
+         sqres = q61mult(divres, divres);
+         if (~rsqrt_of_diff_sqrxy)sqres = -sqres;
+         itsres = ((longint'(2))**61);
+         ittmp = sqres/2;
+         itsres += ittmp;
+         $display("sqres = %h(%0d), ittmp = %h(%0d), itsres = %h(%0d)", sqres, sqres, ittmp, ittmp, itsres, itsres);
+         itcntr = 4; // 2*n
+         do begin
+            divres = q61div(itcntr - 1, itcntr);
+            tmp2it = q61mult(sqres, divres);
+            ittmp  = q61mult(ittmp, tmp2it);
+            itsres += ittmp;
+            $display("itcntr = %0d, tmp2it = %h(%0d), ittmp = %0d, itsres = %0d", itcntr, tmp2it, tmp2it, ittmp, itsres);
+            itcntr += 2;
+         end while(ittmp != 0 && itcntr < 1000);
+      end
+      sres = q61div(itsres, divscal);
+      return unsigned'(sres);
+   endfunction
+   /*!
+    * \brief Q.61型数表示的sqrt(2)
+    */
+   localparam longint signed q61_sqrt2 = real2q61(1.4142135623730950488016887242097);//longint'(1.4142135623730950488016887242097*((longint'(2))**61));
+   /*!
+    * \brief Q.61型数表示的pi
+    */
+   localparam longint signed q61_pi = real2q61(3.1415926535897932384626433832795);//longint'(3.1415926535897932384626433832795*((longint'(2))**61));
+   /*!
+    * \brief 实数度转换为Q.61型弧度值
+    */
+   function automatic longint signed fdeg2q61rad(real fdeg);
+      real fpi, frad;
+      fpi  = real'(q61_pi);
+      frad = fpi*fdeg/180;
+      return signed'(longint'(frad));
+   endfunction
+   /*!
+    * \brief Q.5型数表示的度转换为Q.61型弧度值
+    */
+   function automatic longint signed q5deg2q61rad(int signed q5deg);
+      longint signed q61pi_hipart, q61pi_lopart, res_hipart, res_lopart;
+      q61pi_hipart = (q61_pi >> 30);
+      q61pi_lopart = (q61_pi & (~((-1)<<30)));
+      res_hipart = q61pi_hipart * q5deg * ((1 << 30)/(180*(2**5)));
+      res_lopart = q61pi_lopart * q5deg / (180*(2**5));
+      return res_hipart + res_lopart;
+   endfunction
+   /*!
     * \brief Q.61数的sin/sinh函数实现核
     * \param q61phs          输入的Q.61相位值，单位：弧度，输入值域范围：-7244019458077122842(-pi) ～ +7244019458077122842(pi)
     * \param hyperbolic_mode 双曲坐标计算模式：0-圆坐标计算模式（计算sin函数）；1-计算双曲正弦函数；2-计算双曲余弦函数
@@ -642,6 +757,199 @@ package miscs;
       else                 calcphs = (halfpi - q61phs);
       return q61_sin_sinh_core(.q61phs(calcphs),.hyperbolic_mode(0));
    endfunction
+   /*!
+    * \brief 为三角函数计算 miscs::q61_pi 的分数系数，按周期性将角度换到 -pi 至 pi 之间
+    * \param divdent 分数系数的被除数
+    * \param divisor 分数系数的除数
+    * \return Q.61型数表示的将角度切换到 -pi 至 pi 之间的系数，值域范围为 -1.0 至 1.0 之间
+    */
+   function automatic longint signed q61coef_of_pi_for_triangular_on_div(
+      longint signed divdent, longint signed divisor
+   );
+      if     (divdent >= divisor)return q61div(((divdent + divisor)%(2*divisor)) - divisor, divisor);
+      else if(divdent < -divisor)return q61div(((divdent - divisor)%(2*divisor)) + divisor, divisor);
+      else                       return q61div(divdent, divisor);
+   endfunction
+   /*!
+    * \brief 为三角函数计算 miscs::q61_pi 的倍数系数，按周期性将角度换到 -pi 至 pi 之间
+    * \param mulint 倍数系数的整数倍数
+    * \param mulqfp 倍数系数的Q.61型小数倍数
+    * \return Q.61型数表示的将角度切换到 -pi 至 pi 之间的系数，值域范围为 -1.0 至 1.0 之间
+    */
+   function automatic longint signed q61coef_of_pi_for_triangular_on_mul(
+      longint signed mulint, longint signed mulqfp
+   );
+      longint signed q61_normed_mulint, q61_normed_mulqfp, q61_normed_res;
+      int bitsofmulint, mulqfp_shbits, res_intbits;
+      bit neg_res;
+      bitsofmulint = bits_of_signed_longint(mulint, 64);
+      if (bitsofmulint <= 61) q61_normed_mulint = mulint <<< (61 - bitsofmulint);
+      else                    q61_normed_mulint = mulint >>> (bitsofmulint - 61);
+      mulqfp_shbits = bits_of_signed_longint(mulqfp, 64) - 61;
+      if (mulqfp_shbits >= 0) q61_normed_mulqfp = mulqfp >>> mulqfp_shbits;
+      else                    q61_normed_mulqfp = mulqfp <<< (-mulqfp_shbits);
+      res_intbits = bitsofmulint + mulqfp_shbits;
+      q61_normed_res = q61mult(q61_normed_mulint, q61_normed_mulqfp);
+      if (q61_normed_res < 0) begin
+         neg_res = 1'b1;
+         q61_normed_res = - q61_normed_res;
+      end else begin
+         neg_res = 1'b0;
+      end
+      if (res_intbits > 0) begin
+         q61_normed_res = q61_normed_res << res_intbits;
+         q61_normed_res = q61_normed_res + (longint'(2))**61;
+         q61_normed_res = q61_normed_res&(~((longint'(-1))<<<62));
+         q61_normed_res = q61_normed_res - (longint'(2))**61;
+         if (neg_res) q61_normed_res = -q61_normed_res;
+         if (q61_normed_res >= (longint'(2))**61) q61_normed_res = q61_normed_res - ((longint'(2))**62);
+      end
+      else q61_normed_res = q61_normed_res >>> (-res_intbits); // 已经在 -1.0 至 1.0 之间，不再切换象限
+      return q61_normed_res;
+   endfunction
+   /*!
+    * \brief Q.61数的sinh函数实现
+    * \param q61phs 输入的Q.61相位值，单位：弧度，输入值域范围：-q61_sinh_maxphs ～ +q61_sinh_maxphs
+    * \return Q.61型sinh函数值
+    * \attention 参考Q.61型数的'1'的整型值为：(1<<61)
+    */
+   localparam longint signed q61_sinh_maxphs = real2q61(2.094712547261101);//longint'(2.094712547261101*((longint'(2))**61)); // asinh((2^61-1)*4/2^61)
+   function automatic longint signed q61sinh(
+      longint signed q61phs
+   );
+      return q61_sin_sinh_core(.q61phs(q61phs), .hyperbolic_mode(1));
+   endfunction
+   /*!
+    * \brief Q.61数的cosh函数实现
+    * \param q61phs 输入的Q.61相位值，输入值域范围：-q61_cosh_maxphs ～ +q61_cosh_maxphs
+    * \return Q.61型cosh函数值
+    * \attention 参考Q.61型数的'1'的整型值为：(1<<61)
+    */
+   localparam longint signed q61_cosh_maxphs = real2q61(2.063437068895561);//longint'(2.063437068895561*((longint'(2))**61))-1537/*-1537用于确保最大相位对应计算结果不溢出*/;// acosh((2^61-1)*4/2^61)
+   function automatic longint signed q61cosh(
+      longint signed q61phs
+   );
+      return q61_sin_sinh_core(.q61phs(q61phs), .hyperbolic_mode(2));
+   endfunction
+   /*!
+    * \brief Q.61数的反正切运算核
+    * \param y          矢量纵坐标分量y，要求 abs(y) < 2**61
+    * \param x          矢量横坐标分量x，要求 abs(x) < 2**61
+    * \param hyperbolic 按双曲线坐标计算标志：1'b0-按圆坐标计算；1'b1-按双曲线坐标计算
+    * \return Q.61型的弧度值，0 <= res <= q61_pi/2
+    * \attention 当 #hyperbolic == 1'b1 时，要求 #y/#x < 0.999329299739067 (tanh((2^61-1)*4/2^61))
+    */
+   localparam longint signed q61_atanh_maxscale = real2q61(0.999329299739067);//longint'(0.999329299739067*((longint'(2))**61)); // (tanh((2^61-1)*4/2^61))
+   function automatic longint signed q61atan_core(
+      longint signed y,
+      longint signed x,
+      bit            hyperbolic
+   );
+      longint signed ty, tx, r, t, trignorm_atan_scal, t2, t3, t4, divdr, res;
+      bit acc_sub;
+      trignorm_atan_scal = (64'd2)**61;
+      if (y == 0 && x == 0) return 0;
+      ty = y; if (ty < 0) ty = -ty;
+      tx = x; if (tx < 0) tx = -tx;
+      if (hyperbolic == 1'b1) begin
+         if (ty > q61mult(tx, q61_atanh_maxscale)) return 64'h7FFFFFFFFFFFFFFF;// 上溢出
+         r = 0;
+         t = 1;
+      end else if (ty <= tx / 2) begin // + res; // 0 <= res <= 1/8
+         r = 0;
+         t = 1;
+      end else if (tx <= ty / 2) begin // - res; // 3/8 < res <= 1/2
+         r = ty;
+         ty = tx;
+         tx = r;
+         r = q61_pi/2 + (q61_pi&1);
+         t = -(signed'(64'd1));
+      end else begin                   // + res; // 1/8 < res <= 3/8
+         r = ty - tx;
+         tx = ty + tx;
+         ty = r;
+         r = q61_pi/4 + ((q61_pi/2)&1);
+         t = 1;
+      end
+      res = q61div(ty, tx);
+      if (t < 0) t = longint'(-res);
+      else       t = longint'(res);
+
+      t3 = trignorm_atan_scal;
+      t2 = q61mult(t, t);
+      t4 = t2;
+      acc_sub = 1'b1;
+      divdr = 3;
+      while ((t4/divdr) > 0) begin
+         if (hyperbolic) t3 = t3 + (t4/divdr);
+         else begin
+            if (acc_sub) t3 = t3 - (t4/divdr);
+            else         t3 = t3 + (t4/divdr);
+            acc_sub = ~acc_sub;
+         end
+         t4 = q61mult(t4, t2);
+         divdr = divdr + 2;
+      end
+      return r + q61mult(t, t3);
+   endfunction
+   /*!
+    * \brief 计算Q.61数的二象限反正切值
+    * \param y 矢量纵坐标分量y，要求 abs(y) < 2**61
+    * \param x 矢量横坐标分量x，要求 abs(x) < 2**61
+    * \return Q.61型的弧度值，-q61_pi/2 <= res <= q61_pi/2
+    */
+   function automatic longint signed q61atan2i2q(
+      longint signed y, longint signed x
+   );
+      longint signed r;
+      r = q61atan_core(y, x, 1'b0);
+      if (y[63]^x[63]) r = -r;
+      return r;
+   endfunction
+   /*!
+    * \brief 计算Q.61数的四象限反正切值
+    * \param y 矢量纵坐标分量y，要求 abs(y) < 2**61
+    * \param x 矢量横坐标分量x，要求 abs(x) < 2**61
+    * \return Q.61型的弧度值，-q61_pi/2 <= res <= q61_pi/2
+    */
+   function automatic longint signed q61atan2i4q(
+      longint signed y, longint signed x
+   );
+      longint signed r;
+      r = q61atan_core(y, x, 1'b0);
+      if (x < 0) r = q61_pi - r;
+      if (y < 0) r = -r;
+      return r;
+   endfunction
+   /*!
+    * \brief 计算Q.61数的二象限反双曲正切值
+    * \param y 矢量纵坐标分量y，要求 abs(y) < 2**61
+    * \param x 矢量横坐标分量x，要求 abs(x) < 2**61
+    * \return Q.61型，-64'sd1**61 <= res <= 64'sd1**61
+    */
+   function automatic longint signed q61atanh2i2q(
+      longint signed y, longint signed x
+   );
+      longint signed r;
+      r = q61atan_core(y, x, 1'b1);
+      if (y[63]^x[63]) r = -r;
+      return r;
+   endfunction
+   /*!
+    * \brief 计算Q.61数的四象限反双曲正切值
+    * \param y 矢量纵坐标分量y，要求 abs(y) < 2**61
+    * \param x 矢量横坐标分量x，要求 abs(x) < 2**61
+    * \return Q.61型，-64'sd2**61 <= res <= 64'sd2**61
+    */
+   function automatic longint signed q61atanh2i4q(
+      longint signed y, longint signed x
+   );
+      longint signed r;
+      r = q61atan_core(y, x, 1'b1);
+      if (x < 0) r = (64'd2**61)*2 - r;
+      if (y < 0) r = -r;
+      return r;
+   endfunction
    /*! \brief 对数运算用到的部分常量 */
    localparam int signed  q30_root2_2            = ((1.4142135623730950488016887242097 +0.0000000004656612873077392578125)*2**30);
    localparam int signed  q30_root4_2            = ((1.1892071150027210667174999705605 +0.0000000004656612873077392578125)*2**30);
@@ -747,6 +1055,43 @@ package miscs;
       end
       r = r + n*q15_loge2;
       return r;
+   endfunction
+   /*!
+    * \brief Q.15数乘法
+    * \param x 输入Q.15数x
+    * \param y 输入Q.15数y
+    * \return Q.15数乘法结果
+    */
+   function automatic int signed q15mul(
+      int signed x,
+      int signed y
+   );
+      int signed xh, xl, yh, yl, r;
+      xh = (x>>>7); xl = (x&32'h7F);
+      yh = (y>>>7); yl = (y&32'h7F);
+      r = xh*yh + ((xh*yl)>>>7) + ((yh*xl)>>>7);
+      r = (r>>>1) + (r&1);
+      return r;
+   endfunction
+   /*!
+    * \brief 计算底2对数值
+    * \param y 待求取自然对数值的Q.30数
+    * \return 按Q.15数表示的底2对数结果，误差最大6.1e-5
+    */
+   function automatic int signed q15ilog2ofq30(
+      longint signed y
+   );
+      return q15mul(q15ilogofq30(y), q15_recip_loge2);
+   endfunction
+   /*!
+    * \brief 计算底10对数值
+    * \param y 待求取自然对数值的Q.30数
+    * \return 按Q.15数表示的底10对数结果，误差最大6.1e-5
+    */
+   function automatic int signed q15ilog10ofq30(
+      longint signed y
+   );
+      return q15mul(q15ilogofq30(y), q15_recip_loge10);
    endfunction
 endpackage
  `endif//__MISCS_PKG__
