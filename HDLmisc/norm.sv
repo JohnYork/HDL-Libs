@@ -6,6 +6,7 @@
  * \depends miscs, pipedelay
  */
 `include "miscs.svh"
+`include "mux.svh"
 `define __INC_FROM_NORM__
 `include "norm.svh"
 /*! \brief 有符号数冗余符号位数统计器 */
@@ -13,6 +14,9 @@ module norm #(
    parameter int unsigned DATABITW        = 32, ///< 输入数据位宽
    parameter int unsigned BITWOF_REDUBITS = 6,  ///< 冗余符号位数数值位宽
    parameter int          DELAYTAPS       = 0,  ///< 延迟输出拍数
+   parameter bit          BALNCDLY        =1'b0,///< 在各级复选器间平均分配延迟拍数标志：
+                                                ///< 1'b0-在分级复选器中最多只分配根据 #mux_pkg::delaytaps4mux_recommend 计算的拍数，以节省资源；
+                                                ///< 1'b1-将用户指定的延迟拍数平均分配到各级复选器中，以最大化优化时序性能
    parameter bit          PIPELINE        = 0,  ///< 流水线使能标志，仅当DELAY_MSK != 0时有效，1- 增加寄存器以使能流水线操作，0- 禁用流水线操作以减少寄存器的使用
    parameter bit          PIPEINPUT       = 0   ///< 使能流水线保存和输出输入数据标志， 1- 流水线保持和输出输入数据， 0- 流水线不保持输入数据
 ) (
@@ -29,10 +33,12 @@ module norm #(
    localparam int total_stage        = norm_pkg::stageCountOfDataBitw(DATABITW);
    initial if (BITWOF_REDUBITS  < minbitw_ofredubits)
       $error("norm : parameter 'BITWOF_REDUBITS'(%0d) is too small to hold all the redundant bits, it should not be less than %0d", BITWOF_REDUBITS, minbitw_ofredubits);
+   localparam int taps4stgs_recmd = mux_pkg::delaytaps4mux_recommend(.inputcnt(DATABITW));
+   localparam int taps4stgs       = (taps4stgs_recmd < DELAYTAPS && BALNCDLY == 1'b0) ? taps4stgs_recmd : DELAYTAPS;
 	wire notsignbit = ~x[DATABITW-1];
 	genvar i; generate
       for (i = bitw_ofidx - 1; i >= 0; i--) begin: STAGE
-         localparam int delaytaps_stage = miscs::delaytaps4stage(bitw_ofidx, i, DELAYTAPS, 1'b0);
+         localparam int delaytaps_stage = miscs::delaytaps4stage(bitw_ofidx, i, taps4stgs, 1'b0);
          logic[(2**(i+1))-1:0] stage_in;
          logic[bitw_ofidx-1:i] rdbits, rdbits_out;
          logic                 nsgn_in, mshbs_redubits;
@@ -80,18 +86,20 @@ module norm #(
             );
          end: INTMOUT
          else begin: RESOUT
+            if (DATABITW < 2**bitw_ofidx) assign rdbits_out = rdbits - (bitw_ofidx)'((2**bitw_ofidx) - DATABITW);
+            else                          assign rdbits_out = rdbits;
             pipedelay_taps #(
-               .DATABITW   (bitw_ofidx       ),
-               .DELAYTAPS  (delaytaps_stage  )
+               .DATABITW   (bitw_ofidx          ),
+               .DELAYTAPS  (delaytaps_stage
+                           +(DELAYTAPS-taps4stgs))
             ) pdoi(
                .clk  (clk        ),
                .aclr (aclr       ),
                .sclr (sclr       ),
                .clken(clken      ),
-               .x    (rdbits     ),
-               .pipe_x(rdbits_out)
+               .x    (rdbits_out ),
+               .pipe_x(redubits  )
             );
-            assign redubits = rdbits_out;
          end: RESOUT
          if (i == bitw_ofidx - 1) begin
             assign stage_in = (2**(i+1))'(x),
