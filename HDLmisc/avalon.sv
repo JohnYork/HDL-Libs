@@ -1214,7 +1214,7 @@ module avalon_mirrormux_sinkbycs #(
       logic                  sink_sop, sink_eop, sink_valid;
    } sigs_m2isink_t;
    typedef struct packed {
-      logic sink_blk, prcsr_blk;
+      logic sink_blk, prcsr_blk, usr_blk;
    } sigs_i2msink_t;
    typedef struct packed {
       logic src_blk;
@@ -1231,7 +1231,7 @@ module avalon_mirrormux_sinkbycs #(
    sigs_m2isrc_t  m2isrci;
    sigs_i2msrc_t  i2msrcm[mirrorCnt-1:0], i2msrci;
    localparam int bitwof_sigs_i2msrc = srcidxbitw*2 + srccntbitw + 4;
-   logic sinkblk2m, prcsrblk2m;
+   logic sinkblk2m, prcsrblk2m, usrblk2m;
    logic msrcmuxblk2i[mirrorCnt-1:0], msrcmuxblk2idle[mirrorCnt-1:0];
    assign ifi.sink_idx    = m2isinki.sink_idx,
           ifi.sink_nxtidx = m2isinki.sink_nxtidx,
@@ -1329,15 +1329,24 @@ module avalon_mirrormux_sinkbycs #(
          .sigsrced(m2isinki                                 )
       );
       always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(ifi.clk, ifi.aclr)) begin
-         if      (ifi.aclr)   prcsrblk2m <= '0;
-         else if (ifi.sclr)   prcsrblk2m <= '0;
-         else if (ifi.clken)  prcsrblk2m <= ifi.prcsr_blk;
-         else                 prcsrblk2m <= prcsrblk2m;
+         if      (ifi.aclr)prcsrblk2m <= '0;
+         else if (ifi.sclr)prcsrblk2m <= '0;
+         else              prcsrblk2m <= ifi.clken
+                                         ? ifi.prcsr_blk
+                                         : prcsrblk2m;
+      end
+      always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(ifi.clk, ifi.aclr)) begin
+         if      (ifi.aclr)usrblk2m <= '0;
+         else if (ifi.sclr)usrblk2m <= '0;
+         else              usrblk2m <= ifi.clken
+                                         ? ifi.usr_blk
+                                         : usrblk2m;
       end
    end else begin
       assign m2isinki         = m2isinki4connect,
              sinkblk2m        = ifi.sink_blk & ifi.sink_valid,
              prcsrblk2m       = ifi.prcsr_blk,
+             usrblk2m         = ifi.usr_blk,
              muxp.sink_bufsel = '0;
    end
    localparam int svrLatency = avalon_pkg::prclat_of_ifCfg(SVR_IC);
@@ -1390,6 +1399,7 @@ module avalon_mirrormux_sinkbycs #(
              m2isinkm[i].sink_valid  = ifim[i].sink_valid;
       assign ifim[i].sink_blk   = i2msinkm[i].sink_blk,
              ifim[i].prcsr_blk  = i2msinkm[i].prcsr_blk,
+             ifim[i].usr_blk    = i2msinkm[i].usr_blk,
              ifim[i].src_idx    = (msrcidxbitw)'(i2msrcm[i].src_idx),
              ifim[i].src_nxtidx = (msrcidxbitw)'(i2msrcm[i].src_nxtidx),
              ifim[i].src_cnt    = (msrccntbitw)'(i2msrcm[i].src_cnt),
@@ -1480,7 +1490,8 @@ module avalon_mirrormux_sinkbycs #(
              i2msinkm[i].sink_blk         = muxp.msink_cs[i]
                                             ? sinkblk2m
                                             : sink_blk_i,
-             i2msinkm[i].prcsr_blk        = prcsrblk2m;
+             i2msinkm[i].prcsr_blk        = prcsrblk2m,
+             i2msinkm[i].usr_blk          = usrblk2m;
    end endgenerate
    shiftfixtaps #(
       .DATABITW   (mirrorCnt        ),
@@ -2545,17 +2556,6 @@ module avalon_prcsr_basic_mgr #(
    else             assign blkprcsr_2use = 1'b0;
    if (BLKSINK_EN)assign blksink_2use = blksink;
    else           assign blksink_2use = 1'b0;
-   logic sink_ongoing;
-   always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(crp.clk, crp.aclr)) begin
-      if     (crp.aclr)          sink_ongoing <= 1'b0;
-      else if(crp.sclr)          sink_ongoing <= 1'b0;
-      else if(~crp.clken)        sink_ongoing <= sink_ongoing;
-      else if(~procp.sink_valid) sink_ongoing <= sink_ongoing;
-      else if(procp.sink_eop)    sink_ongoing <= 1'b0;
-      else if(procp.sink_sop)    sink_ongoing <= 1'b1;
-      else                       sink_ongoing <= sink_ongoing;
-   end
-   wire sinkbroken = sink_ongoing&(~procp.sink_valid);
    if (bufSrc == 1'b1) begin
       ///< 产生 #prcsr_blk 和 procp.src_bufsel
       logic prcsrblk2o;
@@ -2574,7 +2574,8 @@ module avalon_prcsr_basic_mgr #(
          .bufsel  (procp.src_bufsel ),
          .blkprcsr(prcsrblk2o       )
       );
-      assign procp.prcsr_blk = prcsrblk2o | blkprcsr_2use | sinkbroken,
+      // 输入中断不触发 prcsr_blk 置位，避免额外的阻塞信号阻断处理流程
+      assign procp.prcsr_blk = prcsrblk2o | blkprcsr_2use,
              procp.usr_blk   = blkprcsr_2use;
       ///< 产生 #procp.src_sop 、 #procp.src_valid
       wire[AUXBITW2SRC+1:0]sig2bufsrc, sigbufsrcd;
@@ -2605,7 +2606,7 @@ module avalon_prcsr_basic_mgr #(
    end else begin
       ///< 产生 #prcsr_blk 和 procp.src_bufsel
       assign procp.src_bufsel = 1'b0;
-      assign procp.prcsr_blk  = (procp.src_blk & valid2src) | blkprcsr_2use | sinkbroken,
+      assign procp.prcsr_blk  = (procp.src_blk & valid2src) | blkprcsr_2use,
              procp.usr_blk    = blkprcsr_2use;
       ///< 产生 #valid2src_use
       ///< 产生 #procp.src_sop 和 #procp.src_valid
@@ -3519,7 +3520,10 @@ module avalon_prcsrmake_4tdm #(
    else if (PURGE_TDM == 1'b0 && maxSrc % maxSink != 0)
       $error("avalon_prcsrmake_4tdm : IC.maxSrc(%0d) should be integer times of IC.maxSink(%0d) while PURGE_TDM(%0b)", maxSrc, maxSink, PURGE_TDM);
    localparam bit bufSrc = avalon_pkg::bufSrc_of_ifCfg(IC);
-   localparam int tdm2src_taps = avalon_pkg::prclat_of_ifCfg(IC) - SINK2TDM_TAPS;
+   localparam int prclat_ic = avalon_pkg::prclat_of_ifCfg(IC);
+   initial if (PURGE_TDM == 1'b1 && prclat_ic <= SINK2TDM_TAPS)
+      $error("avalon_prcsrmake_4tdm : avalon_pkg::prclat_of_ifCfg(ic) = %0d should be greator than SINK2TDM_TAPS(%0d)", prclat_ic, SINK2TDM_TAPS);
+   localparam int tdm2src_taps = prclat_ic - SINK2TDM_TAPS;
    logic[1:0]sigs2tdm, sigs_tdm, sigs2pipe, sigs2presrc, sigs2src;
    wire sinkblk_bytdm, blksink2use;
    assign sigs2tdm = {(procp.sink_valid&(~blksink2use)), procp.sink_sop};
