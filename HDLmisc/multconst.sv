@@ -245,6 +245,8 @@ module umultconst #(
    parameter int unsigned VARBITW   = 0,           ///< 指定的变量位宽， = 0 表示根据变量的最大值、最小值自动计算位宽
    parameter int unsigned CONSTBITW = 0,           ///< 指定的常量位宽， = 0 表示根据常量的值自动计算位宽
    parameter int signed   RESBITW   = 0,           ///< 指定结果位宽， = 0 时表示自动计算最佳位宽， > 0 表示计算结果按高位对齐，< 0 表示计算结果按低位对齐
+   parameter bit          ALGNVARBW = 1'b0,        ///< RESBITW == 0时，结果是否对齐变量位宽，1'b0-结果按变量的实际值域范围计算，1'b1-结果按变量的位宽计算
+                                                   ///< RESBITW != 0时，本参数被忽略
    parameter bit          USEHRDCOR = 1'b0,        ///< 使用硬件核例化常数乘法器标志，1'b0-使用逻辑元件例化常数乘法器，1'b1-使用硬件乘法器核例化常数乘法器
    parameter bit          RNDRESLSB = 1'b1,        ///< 结果最低位做四舍五入处理标志，1'b1-对结果最低位四舍五入，1'b0-不对结果最低位四舍五入
    parameter int          DELAYTAPS = 0            ///< 延迟输出拍数，可选值：0,1,2
@@ -286,7 +288,9 @@ module umultconst #(
                               ? ((RESBITW < 0)
                                  ? (-RESBITW)
                                  : RESBITW)
-                              : resbitw_i;
+                              : (ALGNVARBW
+                                 ? resbitw_i
+                                 : resbitw_e);
    output logic[res_bitw-1:0]       res;           ///< 乘法结果
    output wire                      res_valid;     ///< 输出结果有效标志
 
@@ -810,6 +814,7 @@ module imultconst_negcmb #(
                .VARBITW    (var2in_bitw   ),
                .CONSTBITW  (absconstbitw  ),
                .RESBITW    (absres_bitw   ),
+               .ALGNVARBW  (1'b1          ),
                .USEHRDCOR  (USEHRDCOR     ),
                .RNDRESLSB  (RNDRESLSB     ),
                .DELAYTAPS  (umc_delaytaps )
@@ -961,6 +966,8 @@ module ulmultconst #(
    parameter int     unsigned VARBITW   = 0,       ///< 指定的变量位宽， = 0 表示根据变量的最大值、最小值自动计算位宽
    parameter int     unsigned CONSTBITW = 0,       ///< 指定的常量位宽， = 0 表示根据常量的值自动计算位宽
    parameter int     signed   RESBITW   = 0,       ///< 指定结果位宽， = 0 时表示自动计算最佳位宽， > 0 表示计算结果按高位对齐，< 0 表示计算结果按低位对齐;
+   parameter bit              ALGNVARBW = 1'b0,    ///< RESBITW == 0时，结果是否对其变量位宽，1'b0-结果按变量的实际值域范围计算，1'b1-结果按变量的位宽计算
+                                                   ///< RESBITW != 0时，本参数被忽略
    parameter bit              USEHRDCOR = 1'b0,    ///< 使用硬件核例化常数乘法器标志，1'b0-使用逻辑元件例化常数乘法器，1'b1-使用硬件乘法器核例化常数乘法器
    parameter bit              RNDRESLSB = 1'b1,    ///< 结果最低位做四舍五入处理标志，1'b1-对结果最低位四舍五入，1'b0-不对结果最低位四舍五入
    parameter int              DELAYTAPS = 0        ///< 延迟输出拍数，可选值：0,1,2,3
@@ -1068,6 +1075,7 @@ module ulmultconst #(
          .VARBITW    (0                                  ),
          .CONSTBITW  (0                                  ),
          .RESBITW    (-bitwof_chmvh                      ),
+         .ALGNVARBW  (1'b0                               ),
          .USEHRDCOR  (USEHRDCOR                          ),
          .RNDRESLSB  (RNDRESLSB                          ),
          .DELAYTAPS  (DELAYTAPS > 0 ? DELAYTAPS - 1 : 0  )
@@ -1098,6 +1106,7 @@ module ulmultconst #(
          .VARBITW    (0                                  ),
          .CONSTBITW  (0                                  ),
          .RESBITW    (-bitwof_chmvl                      ),
+         .ALGNVARBW  (1'b0                               ),
          .USEHRDCOR  (USEHRDCOR                          ),
          .RNDRESLSB  (RNDRESLSB                          ),
          .DELAYTAPS  (DELAYTAPS > 0 ? DELAYTAPS - 1 : 0  )
@@ -1128,6 +1137,7 @@ module ulmultconst #(
          .VARBITW    (0                                  ),
          .CONSTBITW  (0                                  ),
          .RESBITW    (-bitwof_clmvh                      ),
+         .ALGNVARBW  (1'b0                               ),
          .USEHRDCOR  (USEHRDCOR                          ),
          .RNDRESLSB  (RNDRESLSB                          ),
          .DELAYTAPS  (DELAYTAPS > 0 ? DELAYTAPS - 1 : 0  )
@@ -1158,6 +1168,7 @@ module ulmultconst #(
          .VARBITW    (0                                  ),
          .CONSTBITW  (0                                  ),
          .RESBITW    (-bitwof_clmvl                      ),
+         .ALGNVARBW  (1'b0                               ),
          .USEHRDCOR  (USEHRDCOR                          ),
          .RNDRESLSB  (RNDRESLSB                          ),
          .DELAYTAPS  (DELAYTAPS > 0 ? DELAYTAPS - 1 : 0  )
@@ -1506,6 +1517,7 @@ module ilmultconst_negcmb #(
                .VARBITW    (var2in_bitw   ),
                .CONSTBITW  (absconstbitw  ),
                .RESBITW    (absres_bitw   ),
+               .ALGNVARBW  (1'b1          ),
                .USEHRDCOR  (USEHRDCOR     ),
                .RNDRESLSB  (RNDRESLSB     ),
                .DELAYTAPS  (umc_delaytaps )
