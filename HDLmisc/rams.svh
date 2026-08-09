@@ -182,16 +182,16 @@ interface sdpram_2clk_packedarray_extd_if #(
    input  wire aclr,
    input  wire sclr_q
 );
-   logic                            we;            ///< RAM写信号，高电平(1)有效
-   logic                            clken_w;       ///< RAM写使能信号，高电平(1)有效
+   logic                               we;         ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;    ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addr_w;        ///< RAM写地址
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]data_w;        ///< RAM待写数组数据
-   logic[EXTDBITW-1:0]              extd_w;        ///< RAM待写扩展数据
-   logic                            clken_q;       ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]              addr_q;        ///< RAM读地址
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]data_q;        ///< RAM读数组数据输出
-   logic[EXTDBITW-1:0]              extd_q;        ///< RAM读扩展数据输出
+   logic[addrBitw-1:0]                 addr_w;     ///< RAM写地址
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   data_w;     ///< RAM待写数组数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;     ///< RAM待写扩展数据
+   logic                               clken_q;    ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                 addr_q;     ///< RAM读地址
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   data_q;     ///< RAM读数组数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;     ///< RAM读扩展数据输出
 
    modport ramp(input clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk_w, aclr, sclr_q, clk_q, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -206,16 +206,16 @@ interface sdpram_packedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                            we;            ///< RAM写信号，高电平(1)有效
-   logic                            clken_w;       ///< RAM写使能信号，高电平(1)有效
+   logic                               we;         ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;    ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addr_w;        ///< RAM写地址
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]data_w;        ///< RAM待写数组数据
-   logic[EXTDBITW-1:0]              extd_w;        ///< RAM待写扩展数据
-   logic                            clken_q;       ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]              addr_q;        ///< RAM读地址
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]data_q;        ///< RAM读数组数据输出
-   logic[EXTDBITW-1:0]              extd_q;        ///< RAM读扩展数据输出
+   logic[addrBitw-1:0]                 addr_w;     ///< RAM写地址
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   data_w;     ///< RAM待写数组数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;     ///< RAM待写扩展数据
+   logic                               clken_q;    ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                 addr_q;     ///< RAM读地址
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   data_q;     ///< RAM读数组数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;     ///< RAM读扩展数据输出
 
    modport ramp(input clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk, aclr, sclr, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -276,16 +276,16 @@ interface sdpram_2clk_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr_q
 );
-   logic                we;                        ///< RAM写信号，高电平(1)有效
-   logic                clken_w;                   ///< RAM写使能信号，高电平(1)有效
+   logic                               we;                  ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;             ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic [addrBitw-1:0] addr_w;                    ///< RAM写地址
-   logic [DATABITW-1:0] data_w[ARRAYSIZ-1:0];      ///< RAM待写数据
-   logic [EXTDBITW-1:0] extd_w;                    ///< RAM待写扩展数据
-   logic                clken_q;                   ///< RAM读使能信号，高电平(1)有效
-   logic [addrBitw-1:0] addr_q;                    ///< RAM读地址
-   logic [DATABITW-1:0] data_q[ARRAYSIZ-1:0];      ///< RAM读数据输出
-   logic [EXTDBITW-1:0] extd_q;                    ///< RAM读扩展数据输出
+   logic [addrBitw-1:0]                addr_w;              ///< RAM写地址
+   logic [DATABITW-1:0]                data_w[ARRAYSIZ-1:0];///< RAM待写数据
+   logic [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_w;              ///< RAM待写扩展数据
+   logic                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   logic [addrBitw-1:0]                addr_q;              ///< RAM读地址
+   logic [DATABITW-1:0]                data_q[ARRAYSIZ-1:0];///< RAM读数据输出
+   logic [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_q;              ///< RAM读扩展数据输出
 
    modport ramp(input clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk_w, aclr, sclr_q, clk_q, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -300,16 +300,16 @@ interface sdpram_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                we;                        ///< RAM写信号，高电平(1)有效
-   logic                clken_w;                   ///< RAM写使能信号，高电平(1)有效
+   logic                               we;                  ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;             ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic [addrBitw-1:0] addr_w;                    ///< RAM写地址
-   logic [DATABITW-1:0] data_w[ARRAYSIZ-1:0];      ///< RAM待写数据
-   logic [EXTDBITW-1:0] extd_w;                    ///< RAM待写扩展数据
-   logic                clken_q;                   ///< RAM读使能信号，高电平(1)有效
-   logic [addrBitw-1:0] addr_q;                    ///< RAM读地址
-   logic [DATABITW-1:0] data_q[ARRAYSIZ-1:0];      ///< RAM读数据输出
-   logic [EXTDBITW-1:0] extd_q;                    ///< RAM读扩展数据输出
+   logic [addrBitw-1:0]                addr_w;              ///< RAM写地址
+   logic [DATABITW-1:0]                data_w[ARRAYSIZ-1:0];///< RAM待写数据
+   logic [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_w;              ///< RAM待写扩展数据
+   logic                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   logic [addrBitw-1:0]                addr_q;              ///< RAM读地址
+   logic [DATABITW-1:0]                data_q[ARRAYSIZ-1:0];///< RAM读数据输出
+   logic [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_q;              ///< RAM读扩展数据输出
 
    modport ramp(input clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk, aclr, sclr, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -373,16 +373,16 @@ interface sdpram_2clk_packedunit_packedarray_extd_if #(
    input  wire aclr,
    input  wire sclr_q
 );
-   logic                                           we;            ///< RAM写信号，高电平(1)有效
-   logic                                           clken_w;       ///< RAM写使能信号，高电平(1)有效
+   logic                                           we;      ///< RAM写信号，高电平(1)有效
+   logic                                           clken_w; ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]                             addr_w;        ///< RAM写地址
-   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_w;        ///< RAM待写数据
-   logic[EXTDBITW-1:0]                             extd_w;        ///< RAM待写额外数据
-   logic                                           clken_q;       ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]                             addr_q;        ///< RAM读地址
-   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_q;        ///< RAM读数据输出
-   logic[EXTDBITW-1:0]                             extd_q;        ///< RAM读额外数据输出
+   logic[addrBitw-1:0]                             addr_w;  ///< RAM写地址
+   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_w;  ///< RAM待写数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              extd_w;  ///< RAM待写额外数据
+   logic                                           clken_q; ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                             addr_q;  ///< RAM读地址
+   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_q;  ///< RAM读数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              extd_q;  ///< RAM读额外数据输出
 
    modport ramp(input clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk_w, aclr, sclr_q, clk_q, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -398,16 +398,16 @@ interface sdpram_packedunit_packedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                                           we;            ///< RAM写信号，高电平(1)有效
-   logic                                           clken_w;       ///< RAM写使能信号，高电平(1)有效
+   logic                                           we;      ///< RAM写信号，高电平(1)有效
+   logic                                           clken_w; ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]                             addr_w;        ///< RAM写地址
-   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_w;        ///< RAM待写数据
-   logic[EXTDBITW-1:0]                             extd_w;        ///< RAM待写额外数据
-   logic                                           clken_q;       ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]                             addr_q;        ///< RAM读地址
-   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_q;        ///< RAM读数据输出
-   logic[EXTDBITW-1:0]                             extd_q;        ///< RAM读额外数据输出
+   logic[addrBitw-1:0]                             addr_w;  ///< RAM写地址
+   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_w;  ///< RAM待写数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              extd_w;  ///< RAM待写额外数据
+   logic                                           clken_q; ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                             addr_q;  ///< RAM读地址
+   logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_q;  ///< RAM读数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              extd_q;  ///< RAM读额外数据输出
 
    modport ramp(input clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk, aclr, sclr, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -471,16 +471,16 @@ interface sdpram_2clk_packedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr_q
 );
-   logic                            we;                  ///< RAM写信号，高电平(1)有效
-   logic                            clken_w;             ///< RAM写使能信号，高电平(1)有效
+   logic                               we;                  ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;             ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addr_w;              ///< RAM写地址
-   logic[AUNITSIZ-1:0][DATABITW-1:0]data_w[ARRAYSIZ-1:0];///< RAM待写数据
-   logic[EXTDBITW-1:0]              extd_w;              ///< RAM待写额外数据
-   logic                            clken_q;             ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]              addr_q;              ///< RAM读地址
-   logic[AUNITSIZ-1:0][DATABITW-1:0]data_q[ARRAYSIZ-1:0];///< RAM读数据输出
-   logic[EXTDBITW-1:0]              extd_q;              ///< RAM读额外数据输出
+   logic[addrBitw-1:0]                 addr_w;              ///< RAM写地址
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   data_w[ARRAYSIZ-1:0];///< RAM待写数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;              ///< RAM待写额外数据
+   logic                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                 addr_q;              ///< RAM读地址
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   data_q[ARRAYSIZ-1:0];///< RAM读数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;              ///< RAM读额外数据输出
 
    modport ramp(input clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk_w, aclr, sclr_q, clk_q, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -496,16 +496,16 @@ interface sdpram_packedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                            we;                  ///< RAM写信号，高电平(1)有效
-   logic                            clken_w;             ///< RAM写使能信号，高电平(1)有效
+   logic                               we;                  ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;             ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addr_w;              ///< RAM写地址
-   logic[AUNITSIZ-1:0][DATABITW-1:0]data_w[ARRAYSIZ-1:0];///< RAM待写数据
-   logic[EXTDBITW-1:0]              extd_w;              ///< RAM待写额外数据
-   logic                            clken_q;             ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]              addr_q;              ///< RAM读地址
-   logic[AUNITSIZ-1:0][DATABITW-1:0]data_q[ARRAYSIZ-1:0];///< RAM读数据输出
-   logic[EXTDBITW-1:0]              extd_q;              ///< RAM读额外数据输出
+   logic[addrBitw-1:0]                 addr_w;              ///< RAM写地址
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   data_w[ARRAYSIZ-1:0];///< RAM待写数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;              ///< RAM待写额外数据
+   logic                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                 addr_q;              ///< RAM读地址
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   data_q[ARRAYSIZ-1:0];///< RAM读数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;              ///< RAM读额外数据输出
 
    modport ramp(input clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk, aclr, sclr, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -523,16 +523,16 @@ interface sdpram_2clk_unpackedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr_q
 );
-   logic                we;                                ///< RAM写信号，高电平(1)有效
-   logic                clken_w;                           ///< RAM写使能信号，高电平(1)有效
+   logic                               we;                                ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;                           ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]  addr_w;                            ///< RAM写地址
-   logic[DATABITW-1:0]  data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
-   logic[EXTDBITW-1:0]  extd_w;                            ///< RAM待写额外数据
-   logic                clken_q;                           ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]  addr_q;                            ///< RAM读地址
-   logic[DATABITW-1:0]  data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
-   logic[EXTDBITW-1:0]  extd_q;                            ///< RAM读额外数据输出
+   logic[addrBitw-1:0]                 addr_w;                            ///< RAM写地址
+   logic[DATABITW-1:0]                 data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;                            ///< RAM待写额外数据
+   logic                               clken_q;                           ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                 addr_q;                            ///< RAM读地址
+   logic[DATABITW-1:0]                 data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;                            ///< RAM读额外数据输出
 
    modport ramp(input clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk_w, aclr, sclr_q, clk_q, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -548,16 +548,16 @@ interface sdpram_unpackedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                we;                                ///< RAM写信号，高电平(1)有效
-   logic                clken_w;                           ///< RAM写使能信号，高电平(1)有效
+   logic                               we;                                ///< RAM写信号，高电平(1)有效
+   logic                               clken_w;                           ///< RAM写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]  addr_w;                            ///< RAM写地址
-   logic[DATABITW-1:0]  data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
-   logic[EXTDBITW-1:0]  extd_w;                            ///< RAM待写额外数据
-   logic                clken_q;                           ///< RAM读使能信号，高电平(1)有效
-   logic[addrBitw-1:0]  addr_q;                            ///< RAM读地址
-   logic[DATABITW-1:0]  data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
-   logic[EXTDBITW-1:0]  extd_q;                            ///< RAM读额外数据输出
+   logic[addrBitw-1:0]                 addr_w;                            ///< RAM写地址
+   logic[DATABITW-1:0]                 data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;                            ///< RAM待写额外数据
+   logic                               clken_q;                           ///< RAM读使能信号，高电平(1)有效
+   logic[addrBitw-1:0]                 addr_q;                            ///< RAM读地址
+   logic[DATABITW-1:0]                 data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;                            ///< RAM读额外数据输出
 
    modport ramp(input clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, output data_q, extd_q);
    modport clip(input clk, aclr, sclr, data_q, extd_q, output we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q);
@@ -657,14 +657,14 @@ interface tdpram_2clk_packedarray_extd_if #(
    input  wire aclr,
    input  wire sclra, sclrb
 );
-   logic                            wea, web;      ///< RAM端口写信号，高电平(1)有效
-   logic                            clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;      ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addra, addrb;  ///< RAM端口读写地址
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]da, db;        ///< RAM端口输入信号
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]qa, qb;        ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;  ///< RAM端口读写地址
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   da, db;        ///< RAM端口输入信号
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   qa, qb;        ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clka, clkb, aclr, sclra, sclrb, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clka, clkb, aclr, sclra, sclrb, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -681,14 +681,14 @@ interface tdpram_packedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                            wea, web;      ///< RAM端口写信号，高电平(1)有效
-   logic                            clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;      ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addra, addrb;  ///< RAM端口读写地址
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]da, db;        ///< RAM端口输入信号
-   logic[ARRAYSIZ-1:0][DATABITW-1:0]qa, qb;        ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;  ///< RAM端口读写地址
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   da, db;        ///< RAM端口输入信号
+   logic[ARRAYSIZ-1:0][DATABITW-1:0]   qa, qb;        ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clk, aclr, sclr, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clk, aclr, sclr, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -749,14 +749,14 @@ interface tdpram_2clk_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclra, sclrb
 );
-   logic                wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   logic                clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]  addra, addrb;                       ///< RAM端口读写地址
-   logic[DATABITW-1:0]  da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   logic[DATABITW-1:0]  qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   logic[DATABITW-1:0]                 da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   logic[DATABITW-1:0]                 qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clka, clkb, aclr, sclra, sclrb, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clka, clkb, aclr, sclra, sclrb, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -773,14 +773,14 @@ interface tdpram_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   logic                clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]  addra, addrb;                       ///< RAM端口读写地址
-   logic[DATABITW-1:0]  da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   logic[DATABITW-1:0]  qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   logic[DATABITW-1:0]                 da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   logic[DATABITW-1:0]                 qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clk, aclr, sclr, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clk, aclr, sclr, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -850,8 +850,8 @@ interface tdpram_2clk_packedunit_packedarray_extd_if #(
    logic[addrBitw-1:0]                             addra, addrb;  ///< RAM端口读写地址
    logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] da, db;        ///< RAM端口输入信号
    logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] qa, qb;        ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]                             dea, deb;      ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]                             qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clka, clkb, aclr, sclra, sclrb, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clka, clkb, aclr, sclra, sclrb, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -875,8 +875,8 @@ interface tdpram_packedunit_packedarray_extd_if #(
    logic[addrBitw-1:0]                             addra, addrb;  ///< RAM端口读写地址
    logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] da, db;        ///< RAM端口输入信号
    logic[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] qa, qb;        ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]                             dea, deb;      ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]                             qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clk, aclr, sclr, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clk, aclr, sclr, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -940,14 +940,14 @@ interface tdpram_2clk_packedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclra, sclrb
 );
-   logic                            wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   logic                            clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addra, addrb;                       ///< RAM端口读写地址
-   logic[AUNITSIZ-1:0][DATABITW-1:0]da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   logic[AUNITSIZ-1:0][DATABITW-1:0]qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]              dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]              qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clka, clkb, aclr, sclra, sclrb, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clka, clkb, aclr, sclra, sclrb, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -965,14 +965,14 @@ interface tdpram_packedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic                            wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   logic                            clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]              addra, addrb;                       ///< RAM端口读写地址
-   logic[AUNITSIZ-1:0][DATABITW-1:0]da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   logic[AUNITSIZ-1:0][DATABITW-1:0]qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]              dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]              qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   logic[AUNITSIZ-1:0][DATABITW-1:0]   qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clk, aclr, sclr, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clk, aclr, sclr, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -1036,14 +1036,14 @@ interface tdpram_2clk_unpackedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclra, sclrb
 );
-   logic              wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
-   logic              clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]addra, addrb;                                                    ///< RAM端口读写地址
-   logic[DATABITW-1:0]da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
-   logic[DATABITW-1:0]qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;                                                    ///< RAM端口读写地址
+   logic[DATABITW-1:0]                 da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
+   logic[DATABITW-1:0]                 qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clka, clkb, aclr, sclra, sclrb, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clka, clkb, aclr, sclra, sclrb, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);
@@ -1061,14 +1061,14 @@ interface tdpram_unpackedunit_unpackedarray_extd_if #(
    input  wire aclr,
    input  wire sclr
 );
-   logic              wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
-   logic              clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
+   logic                               wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
+   logic                               clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
    localparam int addrBitw = miscs::minbitw_of_integer(ADDRLEN - 1, 32);
-   logic[addrBitw-1:0]addra, addrb;                                                    ///< RAM端口读写地址
-   logic[DATABITW-1:0]da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
-   logic[DATABITW-1:0]qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
-   logic[EXTDBITW-1:0]dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
-   logic[EXTDBITW-1:0]qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
+   logic[addrBitw-1:0]                 addra, addrb;                                                    ///< RAM端口读写地址
+   logic[DATABITW-1:0]                 da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
+   logic[DATABITW-1:0]                 qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
+   logic[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
 
    modport ramp(input clk, aclr, sclr, wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb, output qa, qb, qea, qeb);
    modport clip(input clk, aclr, sclr, qa, qb, qea, qeb, output wea, web, clkena, clkenb, addra, addrb, da, db, dea, deb);

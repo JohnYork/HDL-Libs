@@ -950,20 +950,20 @@ module sdpram_2clk_packedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, data_q, extd_q);
-   input  bit                             clk_w;   ///< RAM写端驱动时钟
-   input  wire                            aclr;    ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  bit                                clk_w;   ///< RAM写端驱动时钟
+   input  wire                               aclr;    ///< 输出端寄存器异步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            we;      ///< RAM写信号，高电平(1)有效
-   input  wire                            clken_w; ///< RAM写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_w;  ///< RAM写地址
-   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]data_w;  ///< RAM待写数组数据
-   input  wire[EXTDBITW-1:0]              extd_w;  ///< RAM待写扩展数据
-   input  bit                             clk_q;   ///< RAM读端驱动时钟
-   input  wire                            sclr_q;  ///< 输出端寄存器同步复位信号，高电平(1)有效
-   input  wire                            clken_q; ///< RAM读使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_q;  ///< RAM读地址
-   output wire[ARRAYSIZ-1:0][DATABITW-1:0]data_q;  ///< RAM读数组数据输出
-   output wire[EXTDBITW-1:0]              extd_q;  ///< RAM读扩展数据输出
+   input  wire                               we;      ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w; ///< RAM写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_w;  ///< RAM写地址
+   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]   data_w;  ///< RAM待写数组数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;  ///< RAM待写扩展数据
+   input  bit                                clk_q;   ///< RAM读端驱动时钟
+   input  wire                               sclr_q;  ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  wire                               clken_q; ///< RAM读使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_q;  ///< RAM读地址
+   output wire[ARRAYSIZ-1:0][DATABITW-1:0]   data_q;  ///< RAM读数组数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;  ///< RAM读扩展数据输出
 
    initial if (DATABITW > ((2**31-EXTDBITW/2-(EXTDBITW&1))/ARRAYSIZ)*ARRAYSIZ)
       $error("sdpram_2clk_packedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) , ARRAYSIZ(%0d) and EXTDBITW(%0d) should not be greator than 2**32", DATABITW*ARRAYSIZ+EXTDBITW, DATABITW, ARRAYSIZ, EXTDBITW);
@@ -976,7 +976,7 @@ module sdpram_2clk_packedarray_extd #(
       .in   (data_w                    ),
       .out  (d[DATABITW*ARRAYSIZ-1:0]  )
    );
-   assign d[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ] = extd_w;
+   if (EXTDBITW > 0) assign d[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ] = extd_w;
    sdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -1002,7 +1002,8 @@ module sdpram_2clk_packedarray_extd #(
       .in   (q[DATABITW*ARRAYSIZ-1:0]  ),
       .out  (data_q                    )
    );
-   assign extd_q = q[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ];
+   if (EXTDBITW > 0) assign extd_q = q[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ];
+   else              assign extd_q = 1'b0;
 endmodule
 module sdpram_packedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据位宽
@@ -1015,19 +1016,19 @@ module sdpram_packedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, data_q, extd_q);
-   input  bit                             clk;     ///< 驱动时钟
-   input  wire                            aclr;    ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                            sclr;    ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;     ///< 驱动时钟
+   input  wire                               aclr;    ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;    ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            we;      ///< RAM写信号，高电平(1)有效
-   input  wire                            clken_w; ///< RAM写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_w;  ///< RAM写地址
-   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]data_w;  ///< RAM待写数组数据
-   input  wire[EXTDBITW-1:0]              extd_w;  ///< RAM待写扩展数据
-   input  wire                            clken_q; ///< RAM读使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_q;  ///< RAM读地址
-   output wire[ARRAYSIZ-1:0][DATABITW-1:0]data_q;  ///< RAM读数组数据输出
-   output wire[EXTDBITW-1:0]              extd_q;  ///< RAM读扩展数据输出
+   input  wire                               we;      ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w; ///< RAM写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_w;  ///< RAM写地址
+   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]   data_w;  ///< RAM待写数组数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;  ///< RAM待写扩展数据
+   input  wire                               clken_q; ///< RAM读使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_q;  ///< RAM读地址
+   output wire[ARRAYSIZ-1:0][DATABITW-1:0]   data_q;  ///< RAM读数组数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;  ///< RAM读扩展数据输出
 
    sdpram_2clk_packedarray_extd #(
       .DATABITW(DATABITW),
@@ -1076,6 +1077,7 @@ module sdpram2clk4if_packedarray_extd #(
    sdpram_2clk_packedarray_extd #(
       .DATABITW(DATABITW),
       .ARRAYSIZ(ARRAYSIZ),
+      .EXTDBITW(EXTDBITW),
       .ADDRLEN (ADDRLEN ),
       .IMPLMOD (IMPLMOD ),
       .REGOUTP (REGOUTP )
@@ -1119,6 +1121,7 @@ module sdpram4if_packedarray_extd #(
    sdpram_packedarray_extd #(
       .DATABITW(DATABITW),
       .ARRAYSIZ(ARRAYSIZ),
+      .EXTDBITW(EXTDBITW),
       .ADDRLEN (ADDRLEN ),
       .IMPLMOD (IMPLMOD ),
       .REGOUTP (REGOUTP )
@@ -1339,20 +1342,20 @@ module sdpram_2clk_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, data_q, extd_q);
-   input  bit                 clk_w;               ///< RAM写端驱动时钟
-   input  wire                aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  bit                                clk_w;               ///< RAM写端驱动时钟
+   input  wire                               aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                we;                  ///< RAM写信号，高电平(1)有效
-   input  wire                clken_w;             ///< RAM写使能信号，高电平(1)有效
-   input  wire [addrBitw-1:0] addr_w;              ///< RAM写地址
-   input  wire [DATABITW-1:0] data_w[ARRAYSIZ-1:0];///< RAM待写数组数据
-   input  wire [EXTDBITW-1:0] extd_w;              ///< RAM待写扩展数据
-   input  bit                 clk_q;               ///< RAM读端驱动时钟
-   input  wire                sclr_q;              ///< 输出端寄存器同步复位信号，高电平(1)有效
-   input  wire                clken_q;             ///< RAM读使能信号，高电平(1)有效
-   input  wire [addrBitw-1:0] addr_q;              ///< RAM读地址
-   output wire [DATABITW-1:0] data_q[ARRAYSIZ-1:0];///< RAM读数组数据输出
-   output wire [EXTDBITW-1:0] extd_q;              ///< RAM读扩展数据输出
+   input  wire                               we;                  ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w;             ///< RAM写使能信号，高电平(1)有效
+   input  wire [addrBitw-1:0]                addr_w;              ///< RAM写地址
+   input  wire [DATABITW-1:0]                data_w[ARRAYSIZ-1:0];///< RAM待写数组数据
+   input  wire [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_w;              ///< RAM待写扩展数据
+   input  bit                                clk_q;               ///< RAM读端驱动时钟
+   input  wire                               sclr_q;              ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  wire                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   input  wire [addrBitw-1:0]                addr_q;              ///< RAM读地址
+   output wire [DATABITW-1:0]                data_q[ARRAYSIZ-1:0];///< RAM读数组数据输出
+   output wire [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_q;              ///< RAM读扩展数据输出
 
    wire[ARRAYSIZ-1:0][DATABITW-1:0] d, q;
    array_unpacked2packed #(
@@ -1403,19 +1406,19 @@ module sdpram_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, data_q, extd_q);
-   input  bit                 clk;                 ///< 驱动时钟
-   input  wire                aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                sclr;                ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;                 ///< 驱动时钟
+   input  wire                               aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;                ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                we;                  ///< RAM写信号，高电平(1)有效
-   input  wire                clken_w;             ///< RAM写使能信号，高电平(1)有效
-   input  wire [addrBitw-1:0] addr_w;              ///< RAM写地址
-   input  wire [DATABITW-1:0] data_w[ARRAYSIZ-1:0];///< RAM待写数组数据
-   input  wire [EXTDBITW-1:0] extd_w;              ///< RAM待写扩展数据
-   input  wire                clken_q;             ///< RAM读使能信号，高电平(1)有效
-   input  wire [addrBitw-1:0] addr_q;              ///< RAM读地址
-   output wire [DATABITW-1:0] data_q[ARRAYSIZ-1:0];///< RAM读数组数据输出
-   output wire [EXTDBITW-1:0] extd_q;              ///< RAM读扩展数据输出
+   input  wire                               we;                  ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w;             ///< RAM写使能信号，高电平(1)有效
+   input  wire [addrBitw-1:0]                addr_w;              ///< RAM写地址
+   input  wire [DATABITW-1:0]                data_w[ARRAYSIZ-1:0];///< RAM待写数组数据
+   input  wire [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_w;              ///< RAM待写扩展数据
+   input  wire                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   input  wire [addrBitw-1:0]                addr_q;              ///< RAM读地址
+   output wire [DATABITW-1:0]                data_q[ARRAYSIZ-1:0];///< RAM读数组数据输出
+   output wire [(EXTDBITW>1?EXTDBITW:1)-1:0] extd_q;              ///< RAM读扩展数据输出
 
    wire[ARRAYSIZ-1:0][DATABITW-1:0] d, q;
    array_unpacked2packed #(
@@ -1478,6 +1481,7 @@ module sdpram2clk4if_unpackedarray_extd #(
    sdpram_2clk_unpackedarray_extd #(
       .DATABITW(DATABITW),
       .ARRAYSIZ(ARRAYSIZ),
+      .EXTDBITW(EXTDBITW),
       .ADDRLEN (ADDRLEN ),
       .IMPLMOD (IMPLMOD ),
       .REGOUTP (REGOUTP )
@@ -1521,6 +1525,7 @@ module sdpram4if_unpackedarray_extd #(
    sdpram_unpackedarray_extd #(
       .DATABITW(DATABITW),
       .ARRAYSIZ(ARRAYSIZ),
+      .EXTDBITW(EXTDBITW),
       .ADDRLEN (ADDRLEN ),
       .IMPLMOD (IMPLMOD ),
       .REGOUTP (REGOUTP )
@@ -1750,13 +1755,13 @@ module sdpram_2clk_packedunit_packedarray_extd #(
    input  wire                                           clken_w; ///< RAM写使能信号，高电平(1)有效
    input  wire[addrBitw-1:0]                             addr_w;  ///< RAM写地址
    input  wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_w;  ///< RAM待写数据
-   input  wire[EXTDBITW-1:0]                             extd_w;  ///< RAM待写扩展数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]              extd_w;  ///< RAM待写扩展数据
    input  bit                                            clk_q;   ///< RAM读端驱动时钟
    input  wire                                           sclr_q;  ///< 输出端寄存器同步复位信号，高电平(1)有效
    input  wire                                           clken_q; ///< RAM读使能信号，高电平(1)有效
    input  wire[addrBitw-1:0]                             addr_q;  ///< RAM读地址
    output wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] data_q;  ///< RAM读数据输出
-   output wire[EXTDBITW-1:0]                             extd_q;  ///< RAM读扩展数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]              extd_q;  ///< RAM读扩展数据输出
 
    initial if (longint'(DATABITW) > longint'((2**31/(ARRAYSIZ*AUNITSIZ))*2))
       $error("sdpram_2clk_packedunit_packedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) and AUNITSIZ(%0d) ARRAYSIZ(%0d) should not be greator than 2**32", DATABITW*AUNITSIZ*ARRAYSIZ, DATABITW, AUNITSIZ, ARRAYSIZ);
@@ -1770,7 +1775,7 @@ module sdpram_2clk_packedunit_packedarray_extd #(
       .in   (data_w                             ),
       .out  (d[DATABITW*AUNITSIZ*ARRAYSIZ-1:0]  )
    );
-   assign d[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = extd_w;
+   if (EXTDBITW > 0) assign d[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = extd_w;
    sdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -1797,7 +1802,8 @@ module sdpram_2clk_packedunit_packedarray_extd #(
       .in   (q[DATABITW*AUNITSIZ*ARRAYSIZ-1:0]  ),
       .out  (data_q                             )
    );
-   assign extd_q = q[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   if (EXTDBITW > 0) assign extd_q = q[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   else              assign extd_q = 1'b0;
 endmodule
 module sdpram_packedunit_packedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据元素位宽
@@ -1957,20 +1963,20 @@ module sdpram_2clk_packedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, data_q, extd_q);
-   input  bit                             clk_w;               ///< RAM写端驱动时钟
-   input  wire                            aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  bit                                clk_w;               ///< RAM写端驱动时钟
+   input  wire                               aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            we;                  ///< RAM写信号，高电平(1)有效
-   input  wire                            clken_w;             ///< RAM写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_w;              ///< RAM写地址
-   input  wire[AUNITSIZ-1:0][DATABITW-1:0]data_w[ARRAYSIZ-1:0];///< RAM待写数据
-   input  wire[EXTDBITW-1:0]              extd_w;              ///< RAM待写扩展数据
-   input  bit                             clk_q;               ///< RAM读端驱动时钟
-   input  wire                            sclr_q;              ///< 输出端寄存器同步复位信号，高电平(1)有效
-   input  wire                            clken_q;             ///< RAM读使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_q;              ///< RAM读地址
-   output wire[AUNITSIZ-1:0][DATABITW-1:0]data_q[ARRAYSIZ-1:0];///< RAM读数据输出
-   output wire[EXTDBITW-1:0]              extd_q;              ///< RAM读扩展数据输出
+   input  wire                               we;                  ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w;             ///< RAM写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_w;              ///< RAM写地址
+   input  wire[AUNITSIZ-1:0][DATABITW-1:0]   data_w[ARRAYSIZ-1:0];///< RAM待写数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;              ///< RAM待写扩展数据
+   input  bit                                clk_q;               ///< RAM读端驱动时钟
+   input  wire                               sclr_q;              ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  wire                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_q;              ///< RAM读地址
+   output wire[AUNITSIZ-1:0][DATABITW-1:0]   data_q[ARRAYSIZ-1:0];///< RAM读数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;              ///< RAM读扩展数据输出
 
    initial if (longint'(DATABITW) > longint'((2**31/(ARRAYSIZ*AUNITSIZ))*2))
       $error("sdpram_2clk_packedunit_unpackedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) and AUNITSIZ(%0d) ARRAYSIZ(%0d) should not be greator than 2**32", DATABITW*AUNITSIZ*ARRAYSIZ, DATABITW, AUNITSIZ, ARRAYSIZ);
@@ -1984,7 +1990,7 @@ module sdpram_2clk_packedunit_unpackedarray_extd #(
       .in   (data_w                             ),
       .out  (d[DATABITW*AUNITSIZ*ARRAYSIZ-1:0]  )
    );
-   assign d[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = extd_w;
+   if (EXTDBITW > 0) assign d[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = extd_w;
    sdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -2011,7 +2017,8 @@ module sdpram_2clk_packedunit_unpackedarray_extd #(
       .in   (q[DATABITW*AUNITSIZ*ARRAYSIZ-1:0]  ),
       .out  (data_q                             )
    );
-   assign extd_q = q[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   if (EXTDBITW > 0) assign extd_q = q[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   else              assign extd_q = 1'b0;
 endmodule
 module sdpram_packedunit_unpackedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据元素位宽
@@ -2025,19 +2032,19 @@ module sdpram_packedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, data_q, extd_q);
-   input  bit                             clk;                 ///< 驱动时钟
-   input  wire                            aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                            sclr;                ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;                 ///< 驱动时钟
+   input  wire                               aclr;                ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;                ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            we;                  ///< RAM写信号，高电平(1)有效
-   input  wire                            clken_w;             ///< RAM写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_w;              ///< RAM写地址
-   input  wire[AUNITSIZ-1:0][DATABITW-1:0]data_w[ARRAYSIZ-1:0];///< RAM待写数据
-   input  wire[EXTDBITW-1:0]              extd_w;              ///< RAM待写扩展数据
-   input  wire                            clken_q;             ///< RAM读使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addr_q;              ///< RAM读地址
-   output wire[AUNITSIZ-1:0][DATABITW-1:0]data_q[ARRAYSIZ-1:0];///< RAM读数据输出
-   output wire[EXTDBITW-1:0]              extd_q;              ///< RAM读扩展数据输出
+   input  wire                               we;                  ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w;             ///< RAM写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_w;              ///< RAM写地址
+   input  wire[AUNITSIZ-1:0][DATABITW-1:0]   data_w[ARRAYSIZ-1:0];///< RAM待写数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;              ///< RAM待写扩展数据
+   input  wire                               clken_q;             ///< RAM读使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_q;              ///< RAM读地址
+   output wire[AUNITSIZ-1:0][DATABITW-1:0]   data_q[ARRAYSIZ-1:0];///< RAM读数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;              ///< RAM读扩展数据输出
 
    sdpram_2clk_packedunit_unpackedarray_extd #(
       .DATABITW(DATABITW),
@@ -2171,20 +2178,20 @@ module sdpram_2clk_unpackedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk_w, aclr, sclr_q, we, clken_w, addr_w, data_w, extd_w, clk_q, clken_q, addr_q, data_q, extd_q);
-   input  bit                 clk_w;                             ///< RAM写端驱动时钟
-   input  wire                aclr;                              ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  bit                                clk_w;                             ///< RAM写端驱动时钟
+   input  wire                               aclr;                              ///< 输出端寄存器异步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                we;                                ///< RAM写信号，高电平(1)有效
-   input  wire                clken_w;                           ///< RAM写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]  addr_w;                            ///< RAM写地址
-   input  wire[DATABITW-1:0]  data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
-   input  wire[EXTDBITW-1:0]  extd_w;                            ///< RAM待写扩展数据
-   input  bit                 clk_q;                             ///< RAM读端驱动时钟
-   input  wire                sclr_q;                            ///< 输出端寄存器同步复位信号，高电平(1)有效
-   input  wire                clken_q;                           ///< RAM读使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]  addr_q;                            ///< RAM读地址
-   output wire[DATABITW-1:0]  data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
-   output wire[EXTDBITW-1:0]  extd_q;                            ///< RAM读扩展数据输出
+   input  wire                               we;                                ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w;                           ///< RAM写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_w;                            ///< RAM写地址
+   input  wire[DATABITW-1:0]                 data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;                            ///< RAM待写扩展数据
+   input  bit                                clk_q;                             ///< RAM读端驱动时钟
+   input  wire                               sclr_q;                            ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  wire                               clken_q;                           ///< RAM读使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_q;                            ///< RAM读地址
+   output wire[DATABITW-1:0]                 data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;                            ///< RAM读扩展数据输出
 
    initial if (longint'(DATABITW) > longint'((2**31/(ARRAYSIZ*AUNITSIZ))*2))
       $error("sdpram_2clk_unpackedunit_unpackedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) and AUNITSIZ(%0d) ARRAYSIZ(%0d) should not be greator than 2**32", DATABITW*AUNITSIZ*ARRAYSIZ, DATABITW, AUNITSIZ, ARRAYSIZ);
@@ -2198,7 +2205,7 @@ module sdpram_2clk_unpackedunit_unpackedarray_extd #(
       .in   (data_w                             ),
       .out  (d[DATABITW*AUNITSIZ*ARRAYSIZ-1:0]  )
    );
-   assign d[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = extd_w;
+   if (EXTDBITW > 0) assign d[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = extd_w;
    sdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -2225,7 +2232,8 @@ module sdpram_2clk_unpackedunit_unpackedarray_extd #(
       .in   (q[DATABITW*AUNITSIZ*ARRAYSIZ-1:0]  ),
       .out  (data_q                             )
    );
-   assign extd_q = q[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   if (EXTDBITW > 0) assign extd_q = q[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   else              assign extd_q = 1'b0;
 endmodule
 module sdpram_unpackedunit_unpackedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据元素位宽
@@ -2239,19 +2247,19 @@ module sdpram_unpackedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, we, clken_w, addr_w, data_w, extd_w, clken_q, addr_q, data_q, extd_q);
-   input  bit                 clk;                               ///< 驱动时钟
-   input  wire                aclr;                              ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                sclr;                              ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;                               ///< 驱动时钟
+   input  wire                               aclr;                              ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;                              ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                we;                                ///< RAM写信号，高电平(1)有效
-   input  wire                clken_w;                           ///< RAM写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]  addr_w;                            ///< RAM写地址
-   input  wire[DATABITW-1:0]  data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
-   input  wire[EXTDBITW-1:0]  extd_w;                            ///< RAM待写扩展数据
-   input  wire                clken_q;                           ///< RAM读使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]  addr_q;                            ///< RAM读地址
-   output wire[DATABITW-1:0]  data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
-   output wire[EXTDBITW-1:0]  extd_q;                            ///< RAM读扩展数据输出
+   input  wire                               we;                                ///< RAM写信号，高电平(1)有效
+   input  wire                               clken_w;                           ///< RAM写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_w;                            ///< RAM写地址
+   input  wire[DATABITW-1:0]                 data_w[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM待写数据
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_w;                            ///< RAM待写扩展数据
+   input  wire                               clken_q;                           ///< RAM读使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addr_q;                            ///< RAM读地址
+   output wire[DATABITW-1:0]                 data_q[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< RAM读数据输出
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  extd_q;                            ///< RAM读扩展数据输出
 
    sdpram_2clk_packedunit_unpackedarray_extd #(
       .DATABITW(DATABITW),
@@ -2993,17 +3001,17 @@ module tdpram_2clk_packedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (aclr, clka, sclra, wea, clkena, addra, da, dea, qa, qea, clkb, sclrb, web, clkenb, addrb, db, deb, qb, qeb);
-   input  bit                             clka, clkb;    ///< 驱动时钟
-   input  wire                            aclr;          ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                            sclra, sclrb;  ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clka, clkb;    ///< 驱动时钟
+   input  wire                               aclr;          ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclra, sclrb;  ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            wea, web;      ///< RAM端口写信号，高电平(1)有效
-   input  wire                            clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addra, addrb;  ///< RAM端口读写地址
-   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]da, db;        ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
-   output wire[ARRAYSIZ-1:0][DATABITW-1:0]qa, qb;        ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;      ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;  ///< RAM端口读写地址
+   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]   da, db;        ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   output wire[ARRAYSIZ-1:0][DATABITW-1:0]   qa, qb;        ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    initial if (DATABITW > ((2**31-EXTDBITW/2-(EXTDBITW&1))/ARRAYSIZ)*2)$error("tdpram_2clk_packedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) , ARRAYSIZ(%0d) and EXTDBITW(%0d) should not be greator than 2**32", DATABITW*ARRAYSIZ+EXTDBITW, DATABITW, ARRAYSIZ, EXTDBITW);
    localparam int totalbitw = DATABITW*ARRAYSIZ + EXTDBITW;
@@ -3015,7 +3023,6 @@ module tdpram_2clk_packedarray_extd #(
       .in   (da                        ),
       .out  (pda[DATABITW*ARRAYSIZ-1:0])
    );
-   assign pda[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ] = dea;
    packedarray_combine2unit #(
       .UNITBITW(DATABITW),
       .ARRAYSIZ(ARRAYSIZ)
@@ -3023,13 +3030,14 @@ module tdpram_2clk_packedarray_extd #(
       .in   (db                        ),
       .out  (pdb[DATABITW*ARRAYSIZ-1:0])
    );
-   assign pdb[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ] = deb;
+   if (EXTDBITW > 0) assign pda[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ] = dea,
+                            pdb[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ] = deb;
    tdpram_2clk #(
-      .DATABITW(DATABITW),
-      .ADDRLEN (ADDRLEN ),
-      .RAMMODE (RAMMODE ),
-      .IMPLMOD (IMPLMOD ),
-      .REGOUTP (REGOUTP )
+      .DATABITW(totalbitw  ),
+      .ADDRLEN (ADDRLEN    ),
+      .RAMMODE (RAMMODE    ),
+      .IMPLMOD (IMPLMOD    ),
+      .REGOUTP (REGOUTP    )
    ) rami(
       .aclr    (aclr    ),
       .clka    (clka    ),
@@ -3054,7 +3062,6 @@ module tdpram_2clk_packedarray_extd #(
       .in   (pqa[DATABITW*ARRAYSIZ-1:0]),
       .out  (qa                        )
    );
-   assign qea = pqa[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ];
    unit_split2packedarray #(
       .UNITBITW(DATABITW),
       .ARRAYSIZ(ARRAYSIZ)
@@ -3062,7 +3069,8 @@ module tdpram_2clk_packedarray_extd #(
       .in   (pqb[DATABITW*ARRAYSIZ-1:0]),
       .out  (qb                        )
    );
-   assign qeb = pqb[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ];
+   if (EXTDBITW > 0) assign qea = pqa[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ],
+                            qeb = pqb[DATABITW*ARRAYSIZ+EXTDBITW-1:DATABITW*ARRAYSIZ];
 endmodule
 module tdpram_packedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据位宽
@@ -3079,17 +3087,17 @@ module tdpram_packedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, wea, clkena, addra, da, dea, qa, qea, web, clkenb, addrb, db, deb, qb, qeb);
-   input  bit                             clk;           ///< 驱动时钟
-   input  wire                            aclr;          ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                            sclr;          ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;           ///< 驱动时钟
+   input  wire                               aclr;          ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;          ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            wea, web;      ///< RAM端口写信号，高电平(1)有效
-   input  wire                            clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addra, addrb;  ///< RAM端口读写地址
-   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]da, db;        ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
-   output wire[ARRAYSIZ-1:0][DATABITW-1:0]qa, qb;        ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;      ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;  ///< RAM端口读写地址
+   input  wire[ARRAYSIZ-1:0][DATABITW-1:0]   da, db;        ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   output wire[ARRAYSIZ-1:0][DATABITW-1:0]   qa, qb;        ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    tdpram_2clk_packedarray_extd #(
       .DATABITW(DATABITW),
@@ -3512,17 +3520,17 @@ module tdpram_2clk_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (aclr, clka, sclra, wea, clkena, addra, da, dea, qa, qea, clkb, sclrb, web, clkenb, addrb, db, deb, qb, qeb);
-   input  bit                 clka, clkb;                         ///< 驱动时钟
-   input  wire                aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                sclra, sclrb;                       ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clka, clkb;                         ///< 驱动时钟
+   input  wire                               aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclra, sclrb;                       ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   input  wire                clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]  addra, addrb;                       ///< RAM端口读写地址
-   input  wire[DATABITW-1:0]  da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   output wire[DATABITW-1:0]  qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   input  wire[DATABITW-1:0]                 da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   output wire[DATABITW-1:0]                 qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    wire[ARRAYSIZ-1:0][DATABITW-1:0] pda, pdb, pqa, pqb;
    array_unpacked2packed #(
@@ -3598,17 +3606,17 @@ module tdpram_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, wea, clkena, addra, da, dea, qa, qea, web, clkenb, addrb, db, deb, qb, qeb);
-   input  bit                 clk;                                ///< 驱动时钟
-   input  wire                aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                sclr;                               ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;                                ///< 驱动时钟
+   input  wire                               aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;                               ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   input  wire                clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]  addra, addrb;                       ///< RAM端口读写地址
-   input  wire[DATABITW-1:0]  da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   output wire[DATABITW-1:0]  qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   input  wire[DATABITW-1:0]                 da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   output wire[DATABITW-1:0]                 qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    wire[ARRAYSIZ-1:0][DATABITW-1:0] pda, pdb, pqa, pqb;
    array_unpacked2packed #(
@@ -4117,9 +4125,9 @@ module tdpram_2clk_packedunit_packedarray_extd #(
    input  wire                                           clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
    input  wire[addrBitw-1:0]                             addra, addrb;  ///< RAM端口读写地址
    input  wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] da, db;        ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]                             dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
    output wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] qa, qb;        ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]                             qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    initial if (longint'(DATABITW) > longint'((2**31/(ARRAYSIZ*AUNITSIZ))*2))
       $error("tdpram_2clk_packedunit_packedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) and AUNITSIZ(%0d) ARRAYSIZ(%0d) should not be greator than 2**32", DATABITW*AUNITSIZ*ARRAYSIZ, DATABITW, AUNITSIZ, ARRAYSIZ);
@@ -4141,8 +4149,8 @@ module tdpram_2clk_packedunit_packedarray_extd #(
       .in   (db                                 ),
       .out  (pdb[DATABITW*AUNITSIZ*ARRAYSIZ-1:0])
    );
-   assign pda[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = dea,
-          pdb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = deb;
+   if (EXTDBITW > 0) assign pda[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = dea,
+                            pdb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = deb;
    tdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -4182,8 +4190,9 @@ module tdpram_2clk_packedunit_packedarray_extd #(
       .in   (pqb                                ),
       .out  (qb[DATABITW*AUNITSIZ*ARRAYSIZ-1:0] )
    );
-   assign qea = pqa[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ],
-          qeb = pqb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   if (EXTDBITW > 0) assign qea = pqa[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ],
+                            qeb = pqb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   else              assign qea = 1'b0, qeb = 1'b0;
 endmodule
 module tdpram_packedunit_packedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据位宽
@@ -4209,9 +4218,9 @@ module tdpram_packedunit_packedarray_extd #(
    input  wire                                           clkena, clkenb;///< RAM端口读写使能信号，高电平(1)有效
    input  wire[addrBitw-1:0]                             addra, addrb;  ///< RAM端口读写地址
    input  wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] da, db;        ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]                             dea, deb;      ///< RAM端口扩展非数组数据输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]              dea, deb;      ///< RAM端口扩展非数组数据输入信号
    output wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][DATABITW-1:0] qa, qb;        ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]                             qea, qeb;      ///< RAM端口扩展非数组数据输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]              qea, qeb;      ///< RAM端口扩展非数组数据输出信号
 
    tdpram_2clk_packedunit_packedarray_extd #(
       .DATABITW(DATABITW),
@@ -4262,23 +4271,23 @@ module tdpram2clk4if_packedunit_packedarray_extd #(
 ) (tdpram_2clk_packedunit_packedarray_extd_if.ramp p);
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
    initial if ($bits(p.addra) != addrBitw || $bits(p.addrb) != addrBitw)
-      $error("tdpram2clk4if_packedunit_packedarray: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
    initial if ($size(p.da, 3) != DATABITW || $size(p.db, 3) != DATABITW)
-      $error("tdpram2clk4if_packedunit_packedarray: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
-   initial if ($size(p.dea, 3) != DATABITW || $size(p.deb, 3) != DATABITW)
-      $error("tdpram2clk4if_packedunit_packedarray: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
+   initial if ($size(p.dea, 3) != EXTDBITW || $size(p.deb, 3) != EXTDBITW)
+      $error("tdpram2clk4if_packedunit_packedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
    initial if ($size(p.da, 2) != AUNITSIZ || $size(p.db, 2) != AUNITSIZ)
-      $error("tdpram2clk4if_packedunit_packedarray: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
    initial if ($size(p.da, 1) != ARRAYSIZ || $size(p.db, 1) != ARRAYSIZ)
-      $error("tdpram2clk4if_packedunit_packedarray: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
    initial if ($size(p.qa, 3) != DATABITW || $size(p.qb, 3) != DATABITW)
-      $error("tdpram2clk4if_packedunit_packedarray: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
    initial if ($size(p.qea, 3) != EXTDBITW || $size(p.qeb, 3) != EXTDBITW)
-      $error("tdpram2clk4if_packedunit_packedarray: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
    initial if ($size(p.qa, 2) != AUNITSIZ || $size(p.qb, 2) != AUNITSIZ)
-      $error("tdpram2clk4if_packedunit_packedarray: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
    initial if ($size(p.qa, 1) != ARRAYSIZ || $size(p.qb, 1) != ARRAYSIZ)
-      $error("tdpram2clk4if_packedunit_packedarray: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
+      $error("tdpram2clk4if_packedunit_packedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
 
    tdpram_2clk_packedunit_packedarray_extd #(
       .DATABITW(DATABITW),
@@ -4329,19 +4338,23 @@ module tdpram4if_packedunit_packedarray_extd #(
 ) (tdpram_packedunit_packedarray_if.ramp p);
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
    initial if ($bits(p.addra) != addrBitw || $bits(p.addrb) != addrBitw)
-      $error("tdpram4if_packedunit_packedarray: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
+      $error("tdpram4if_packedunit_packedarray_extd: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
    initial if ($size(p.da, 3) != DATABITW || $size(p.db, 3) != DATABITW)
-      $error("tdpram4if_packedunit_packedarray: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
+      $error("tdpram4if_packedunit_packedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
+   initial if ($size(p.dea, 3) != EXTDBITW || $size(p.deb, 3) != EXTDBITW)
+      $error("tdpram4if_packedunit_packedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
    initial if ($size(p.da, 2) != AUNITSIZ || $size(p.db, 2) != AUNITSIZ)
-      $error("tdpram4if_packedunit_packedarray: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
+      $error("tdpram4if_packedunit_packedarray_extd: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
    initial if ($size(p.da, 1) != ARRAYSIZ || $size(p.db, 1) != ARRAYSIZ)
-      $error("tdpram4if_packedunit_packedarray: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
+      $error("tdpram4if_packedunit_packedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
    initial if ($size(p.qa, 3) != DATABITW || $size(p.qb, 3) != DATABITW)
-      $error("tdpram4if_packedunit_packedarray: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
+      $error("tdpram4if_packedunit_packedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
+   initial if ($size(p.qea, 3) != EXTDBITW || $size(p.qeb, 3) != EXTDBITW)
+      $error("tdpram4if_packedunit_packedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
    initial if ($size(p.qa, 2) != AUNITSIZ || $size(p.qb, 2) != AUNITSIZ)
-      $error("tdpram4if_packedunit_packedarray: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
+      $error("tdpram4if_packedunit_packedarray_extd: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
    initial if ($size(p.qa, 1) != ARRAYSIZ || $size(p.qb, 1) != ARRAYSIZ)
-      $error("tdpram4if_packedunit_packedarray: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
+      $error("tdpram4if_packedunit_packedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
 
    tdpram_packedunit_packedarray_extd #(
       .DATABITW(DATABITW),
@@ -4638,17 +4651,17 @@ module tdpram_2clk_packedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clka, aclr, sclra, wea, clkena, addra, da, dea, qa, qea, clkb, sclrb, web, clkenb, addrb, db, deb, qb, qeb);
-   input  bit                             clka, clkb;                         ///< 驱动时钟
-   input  wire                            aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                            sclra, sclrb;                       ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clka, clkb;                         ///< 驱动时钟
+   input  wire                               aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclra, sclrb;                       ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   input  wire                            clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addra, addrb;                       ///< RAM端口读写地址
-   input  wire[AUNITSIZ-1:0][DATABITW-1:0]da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]              dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   output wire[AUNITSIZ-1:0][DATABITW-1:0]qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]              qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   input  wire[AUNITSIZ-1:0][DATABITW-1:0]   da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   output wire[AUNITSIZ-1:0][DATABITW-1:0]   qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    initial if (longint'(DATABITW) > longint'((2**31/(ARRAYSIZ*AUNITSIZ))*2))
       $error("tdpram_2clk_packedunit_unpackedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) and AUNITSIZ(%0d) ARRAYSIZ(%0d) should not be greator than 2**32", DATABITW*AUNITSIZ*ARRAYSIZ, DATABITW, AUNITSIZ, ARRAYSIZ);
@@ -4670,8 +4683,8 @@ module tdpram_2clk_packedunit_unpackedarray_extd #(
       .in   (db                                 ),
       .out  (pdb[DATABITW*AUNITSIZ*ARRAYSIZ-1:0])
    );
-   assign pda[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = dea,
-          pdb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = deb;
+   if (EXTDBITW > 0) assign pda[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = dea,
+                            pdb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = deb;
    tdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -4711,8 +4724,9 @@ module tdpram_2clk_packedunit_unpackedarray_extd #(
       .in   (pqb                                ),
       .out  (qb[DATABITW*AUNITSIZ*ARRAYSIZ-1:0] )
    );
-   assign qea = pqa[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ],
-          qeb = pqb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   if (EXTDBITW > 0) assign qea = pqa[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ],
+                            qeb = pqb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   else              assign qea = 1'b0, qeb = 1'b0;
 endmodule
 module tdpram_packedunit_unpackedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据位宽
@@ -4730,17 +4744,17 @@ module tdpram_packedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, clkena, wea, addra, da, dea, qa, qea, clkenb, web, addrb, db, deb, qb, qeb);
-   input  bit                             clk;                                ///< 驱动时钟
-   input  wire                            aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire                            sclr;                               ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;                                ///< 驱动时钟
+   input  wire                               aclr;                               ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;                               ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire                            wea, web;                           ///< RAM端口写信号，高电平(1)有效
-   input  wire                            clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]              addra, addrb;                       ///< RAM端口读写地址
-   input  wire[AUNITSIZ-1:0][DATABITW-1:0]da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]              dea, deb;                           ///< RAM端口扩展非数组数据输入信号
-   output wire[AUNITSIZ-1:0][DATABITW-1:0]qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]              qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;                           ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;                     ///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;                       ///< RAM端口读写地址
+   input  wire[AUNITSIZ-1:0][DATABITW-1:0]   da[ARRAYSIZ-1:0], db[ARRAYSIZ-1:0]; ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                           ///< RAM端口扩展非数组数据输入信号
+   output wire[AUNITSIZ-1:0][DATABITW-1:0]   qa[ARRAYSIZ-1:0], qb[ARRAYSIZ-1:0]; ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                           ///< RAM端口扩展非数组数据输出信号
 
    tdpram_2clk_packedunit_unpackedarray_extd #(
       .DATABITW(DATABITW),
@@ -5173,17 +5187,17 @@ module tdpram_2clk_unpackedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clka, aclr, sclra, wea, clkena, addra, da, dea, qa, qea, clkb, sclrb, web, clkenb, addrb, db, deb, qb, qeb);
-   input  bit               clka, clkb;                                                      ///< 驱动时钟
-   input  wire              aclr;                                                            ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire              sclra, sclrb;                                                    ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clka, clkb;                                                      ///< 驱动时钟
+   input  wire                               aclr;                                                            ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclra, sclrb;                                                    ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire              wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
-   input  wire              clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]addra, addrb;                                                    ///< RAM端口读写地址
-   input  wire[DATABITW-1:0]da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
-   output wire[DATABITW-1:0]qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;                                                    ///< RAM端口读写地址
+   input  wire[DATABITW-1:0]                 da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
+   output wire[DATABITW-1:0]                 qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
 
    initial if (longint'(DATABITW) > longint'((2**31/(ARRAYSIZ*AUNITSIZ))*2))
       $error("tdpram_2clk_unpackedunit_unpackedarray_extd: total data bitwidth(%0d) for DATABITW(%0d) and AUNITSIZ(%0d) ARRAYSIZ(%0d) should not be greator than 2**32", DATABITW*AUNITSIZ*ARRAYSIZ, DATABITW, AUNITSIZ, ARRAYSIZ);
@@ -5205,8 +5219,8 @@ module tdpram_2clk_unpackedunit_unpackedarray_extd #(
       .in   (db                                 ),
       .out  (pdb[DATABITW*AUNITSIZ*ARRAYSIZ-1:0])
    );
-   assign pda[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = dea,
-          pdb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = deb;
+   if (EXTDBITW > 0) assign pda[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = dea,
+                            pdb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ] = deb;
    tdpram_2clk #(
       .DATABITW(totalbitw  ),
       .ADDRLEN (ADDRLEN    ),
@@ -5246,8 +5260,9 @@ module tdpram_2clk_unpackedunit_unpackedarray_extd #(
       .in   (pqb                                ),
       .out  (qb[DATABITW*AUNITSIZ*ARRAYSIZ-1:0] )
    );
-   assign qea = pqa[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ],
-          qeb = pqb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   if (EXTDBITW > 0) assign qea = pqa[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ],
+                            qeb = pqb[DATABITW*AUNITSIZ*ARRAYSIZ+EXTDBITW-1:DATABITW*AUNITSIZ*ARRAYSIZ];
+   else              assign qea = 1'b0, qeb = 1'b0;
 endmodule
 module tdpram_unpackedunit_unpackedarray_extd #(
    parameter int DATABITW = 32,                    ///< 数据位宽
@@ -5265,17 +5280,17 @@ module tdpram_unpackedunit_unpackedarray_extd #(
                                                    ///< 0-逻辑资源模式：用逻辑资源实现与RAM类似的电路功能
    parameter bit REGOUTP  = 1'b0                   ///< 寄存读输出数据标志，1'b1-寄存读输出数据以提高时序性能，1'b0-不寄存读输出数据以降低时延
 ) (clk, aclr, sclr, clkena, wea, addra, da, dea, qa, qea, clkenb, web, addrb, db, deb, qb, qeb);
-   input  bit               clk;                                                             ///< 驱动时钟
-   input  wire              aclr;                                                            ///< 输出端寄存器异步复位信号，高电平(1)有效
-   input  wire              sclr;                                                            ///< 输出端寄存器同步复位信号，高电平(1)有效
+   input  bit                                clk;                                                             ///< 驱动时钟
+   input  wire                               aclr;                                                            ///< 输出端寄存器异步复位信号，高电平(1)有效
+   input  wire                               sclr;                                                            ///< 输出端寄存器同步复位信号，高电平(1)有效
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
-   input  wire              wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
-   input  wire              clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
-   input  wire[addrBitw-1:0]addra, addrb;                                                    ///< RAM端口读写地址
-   input  wire[DATABITW-1:0]da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
-   input  wire[EXTDBITW-1:0]dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
-   output wire[DATABITW-1:0]qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
-   output wire[EXTDBITW-1:0]qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
+   input  wire                               wea, web;                                                        ///< RAM端口写信号，高电平(1)有效
+   input  wire                               clkena, clkenb;                                                  ///< RAM端口读写使能信号，高电平(1)有效
+   input  wire[addrBitw-1:0]                 addra, addrb;                                                    ///< RAM端口读写地址
+   input  wire[DATABITW-1:0]                 da[ARRAYSIZ-1:0][AUNITSIZ-1:0], db[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输入信号
+   input  wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  dea, deb;                                                        ///< RAM端口扩展非数组数据输入信号
+   output wire[DATABITW-1:0]                 qa[ARRAYSIZ-1:0][AUNITSIZ-1:0], qb[ARRAYSIZ-1:0][AUNITSIZ-1:0];  ///< RAM端口输出信号
+   output wire[(EXTDBITW>1?EXTDBITW:1)-1:0]  qea, qeb;                                                        ///< RAM端口扩展非数组数据输出信号
 
    tdpram_2clk_unpackedunit_unpackedarray_extd #(
       .DATABITW(DATABITW),
@@ -5326,23 +5341,23 @@ module tdpram2clk4if_unpackedunit_unpackedarray_extd #(
 ) (tdpram_2clk_unpackedunit_unpackedarray_extd_if.ramp p);
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
    initial if ($bits(p.addra) != addrBitw || $bits(p.addrb) != addrBitw)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
    initial if ($size(p.da, 3) != DATABITW || $size(p.db, 3) != DATABITW)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
    initial if ($size(p.dea, 1) != EXTDBITW || $size(p.deb, 1) != EXTDBITW)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
    initial if ($size(p.da, 2) != AUNITSIZ || $size(p.db, 2) != AUNITSIZ)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
    initial if ($size(p.da, 1) != ARRAYSIZ || $size(p.db, 1) != ARRAYSIZ)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
    initial if ($size(p.qa, 3) != DATABITW || $size(p.qb, 3) != DATABITW)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
    initial if ($size(p.qea, 1) != EXTDBITW || $size(p.qeb, 1) != EXTDBITW)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
    initial if ($size(p.qa, 2) != AUNITSIZ || $size(p.qb, 2) != AUNITSIZ)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
    initial if ($size(p.qa, 1) != ARRAYSIZ || $size(p.qb, 1) != ARRAYSIZ)
-      $error("tdpram2clk4if_packedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
+      $error("tdpram2clk4if_unpackedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
 
    tdpram_2clk_unpackedunit_unpackedarray_extd #(
       .DATABITW(DATABITW),
@@ -5393,23 +5408,23 @@ module tdpram4if_unpackedunit_unpackedarray_extd #(
 ) (tdpram_unpackedunit_unpackedarray_extd_if.ramp p);
    localparam int addrBitw = rams_pkg::addrLen2AddrBitw(ADDRLEN);
    initial if ($bits(p.addra) != addrBitw || $bits(p.addrb) != addrBitw)
-      $error("tdpram4if_packedunit_unpackedarray_extd: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: address bitwidth (%0d) of ADDRLEN(%0d) does not matched the bitwidth of p.addra(%0d) or p.addrb(%0d)", addrBitw, ADDRLEN, $bits(p.addra), $bits(p.addrb));
    initial if ($size(p.da, 3) != DATABITW || $size(p.db, 3) != DATABITW)
-      $error("tdpram4if_packedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.da(%0d) or p.db(%0d)", DATABITW, $size(p.da, 3), $size(p.db, 3));
    initial if ($size(p.dea, 1) != EXTDBITW || $size(p.deb, 1) != EXTDBITW)
-      $error("tdpram4if_packedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.dea(%0d) or p.deb(%0d)", EXTDBITW, $size(p.da, 3), $size(p.db, 3));
    initial if ($size(p.da, 2) != AUNITSIZ || $size(p.db, 2) != AUNITSIZ)
-      $error("tdpram4if_packedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the unit size of array p.da(%0d) or p.db(%0d)", AUNITSIZ, $size(p.da, 2), $size(p.db, 2));
    initial if ($size(p.da, 1) != ARRAYSIZ || $size(p.db, 1) != ARRAYSIZ)
-      $error("tdpram4if_packedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.da(%0d) or p.db(%0d)", ARRAYSIZ, $size(p.da, 1), $size(p.db, 1));
    initial if ($size(p.qa, 3) != DATABITW || $size(p.qb, 3) != DATABITW)
-      $error("tdpram4if_packedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: DATABITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", DATABITW, $size(p.qa, 3), $size(p.qb, 3));
    initial if ($size(p.qea, 1) != EXTDBITW || $size(p.qeb, 1) != EXTDBITW)
-      $error("tdpram4if_packedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: EXTDBITW(%0d) does not match the element bitwidth of array p.qa(%0d) or p.qb(%0d)", EXTDITW, $size(p.qea, 3), $size(p.qeb, 3));
    initial if ($size(p.qa, 2) != AUNITSIZ || $size(p.qb, 2) != AUNITSIZ)
-      $error("tdpram4if_packedunit_unpackedarray_extd: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: AUNITSIZ(%0d) does not match the unit size of array p.qa(%0d) or p.qb(%0d)", AUNITSIZ, $size(p.qa, 2), $size(p.qb, 2));
    initial if ($size(p.qa, 1) != ARRAYSIZ || $size(p.qb, 1) != ARRAYSIZ)
-      $error("tdpram4if_packedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
+      $error("tdpram4if_unpackedunit_unpackedarray_extd: ARRAYSIZ(%0d) does not match the size of array p.qa(%0d) or p.qb(%0d)", ARRAYSIZ, $size(p.qa, 1), $size(p.qb, 1));
 
    tdpram_unpackedunit_unpackedarray_extd #(
       .DATABITW(DATABITW),
