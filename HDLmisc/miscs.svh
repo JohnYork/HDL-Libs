@@ -519,6 +519,18 @@ package miscs;
       return res;
    endfunction
    /*!
+    * \brief Q.61型数除法
+    * \param q61x Q.61型被除数
+    * \param q61y Q.61型除数
+    * \return Q.61型除法运算结果
+    */
+   function automatic longint signed q61div(longint signed q61divdent, longint signed q61divisor);
+      divres_t dr;
+      longint signed res;
+      dr = fixdiv(q61divdent, q61divisor);
+      res = divres2qfix(dr, 61);
+      return res;
+   endfunction
    /*!
     * \brief 计算两个Q.61型数的平方和或平方差的平方根
     * \param q61x               Q.61型数x
@@ -604,6 +616,12 @@ package miscs;
       end
       sres = q61div(itsres, divscal);
       return unsigned'(sres);
+   endfunction
+   /*! \brief 浮点数转换为Q.61定点数，用于绕过 Verilator 类型转换不认为是常数函数的缺陷 */
+   function automatic longint real2q61(real fp);
+      /* verilator lint_off REALCVT */
+      return fp*(64'd2**61);
+      /* lint_on */
    endfunction
    /*!
     * \brief Q.61型数表示的sqrt(2)
