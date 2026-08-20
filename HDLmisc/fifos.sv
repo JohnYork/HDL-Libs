@@ -1470,6 +1470,7 @@ module fifo_1clk #(
    output wire                qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                    ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                    ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                   ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 信号才需要使用，否则不必使用
    output logic[UNITBITW-1:0] qp;                  ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire [depBitw-1:0]  usedw;               ///< FIFO已使用深度
@@ -1533,6 +1534,7 @@ module fifo_1clk_packedarray #(
    output wire                            qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                                ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                                ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                               ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 信号才需要使用，否则不必使用
    output logic[UNITBITW-1:0]             qp;                  ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire[depBitw-1:0]               usedw;               ///< FIFO已使用深度
@@ -1602,6 +1604,7 @@ module fifo_1clk_unpackedarray #(
    output wire                qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                    ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                    ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                   ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 信号才需要使用，否则不必使用
    output logic[UNITBITW-1:0] qp[ARRAYSIZ-1:0];    ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire [depBitw-1:0]  usedw;               ///< FIFO已使用深度
@@ -1674,6 +1677,7 @@ module fifo_1clk_packedarray_extd #(
    output wire                            qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                                ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                                ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                               ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 、 #qpe 信号才需要使用，否则不必使用
    output wire[ARRAYSIZ-1:0][UNITBITW-1:0]qp;                  ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    output wire[EXTDBITW-1:0]              qpe;                 ///< 读泄漏输出补偿扩展数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
@@ -1750,6 +1754,7 @@ module fifo_1clk_unpackedarray_extd #(
    output wire                qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                    ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                    ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                   ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 、 #qpe 信号才需要使用，否则不必使用
    output wire [UNITBITW-1:0] qp[ARRAYSIZ-1:0];    ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    output wire [EXTDBITW-1:0] qpe;                 ///< 读泄漏输出补偿扩展数据，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
@@ -1824,6 +1829,7 @@ module fifo_1clk_packedunit_packedarray #(
    output wire                                           qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                                               ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                                               ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                                              ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 信号才需要使用，否则不必使用
    output wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][UNITBITW-1:0] qp;                  ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire[depBitw -1:0]                             usedw;               ///< FIFO已使用深度
@@ -1897,6 +1903,7 @@ module fifo_1clk_packedunit_unpackedarray #(
    output wire                            qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                                ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                                ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                               ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 信号才需要使用，否则不必使用
    output wire[AUNITSIZ-1:0][UNITBITW-1:0]qp[ARRAYSIZ-1:0];    ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire[depBitw -1:0]              usedw;               ///< FIFO已使用深度
@@ -1970,6 +1977,7 @@ module fifo_1clk_unpackedunit_unpackedarray #(
    output wire                qlk;                          ///< 读泄漏信号，高电平(1)有效。
                                                             ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                             ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                            ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 信号才需要使用，否则不必使用
    output logic[UNITBITW-1:0] qp[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire [depBitw -1:0] usedw;                        ///< FIFO已使用深度
@@ -2046,6 +2054,7 @@ module fifo_1clk_packedunit_packedarray_extd #(
    output wire                                           qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                                               ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                                               ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                                              ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 、 #qpe 信号才需要使用，否则不必使用
    output wire[ARRAYSIZ-1:0][AUNITSIZ-1:0][UNITBITW-1:0] qp;                  ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    output wire[EXTDBITW-1:0]                             qpe;                 ///< 读泄漏输出补偿扩展数据
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
@@ -2126,7 +2135,8 @@ module fifo_1clk_packedunit_unpackedarray_extd #(
    output wire                            qlk;                 ///< 读泄漏信号，高电平(1)有效。
                                                                ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                                ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
-   output wire[AUNITSIZ-1:0][UNITBITW-1:0]qp;                  ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
+                                                               ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 、 #qpe 信号才需要使用，否则不必使用
+   output wire[AUNITSIZ-1:0][UNITBITW-1:0]qp[ARRAYSIZ-1:0];    ///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    output wire[EXTDBITW-1:0]              qpe;                 ///< 读泄漏输出扩展数据
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
    output wire[depBitw -1:0]              usedw;               ///< FIFO已使用深度
@@ -2206,6 +2216,7 @@ module fifo_1clk_unpackedunit_unpackedarray_extd #(
    output wire                qlk;                          ///< 读泄漏信号，高电平(1)有效。
                                                             ///< 由于双口RAM的读写特性限制，基于双口RAM实现的SHOWHEAD模式FIFO在空状态下，若写入数据后需要在下一拍立即读出，在FIFO的输出端将无法得到有效的数据。
                                                             ///< 为补偿该情况，用户应在 #qlk 信号为高电平(1)时用 #qp 端口的数据替换 #q 端口的数据
+                                                            ///< \attention 仅当端口 #q 的被读数据必须在 #wrreq 置位的下一拍即置位时， #qlk 、 #qp 、 #qpe 信号才需要使用，否则不必使用
    output logic[UNITBITW-1:0] qp[ARRAYSIZ-1:0][AUNITSIZ-1:0];///< 读泄漏输出补偿数据信号，仅 #qlk 为高电平时有效
    output wire [EXTDBITW-1:0] qpe;                          ///< FIFO输出扩展数据
    localparam int depBitw = miscs::minbitw_of_integer(DEPTH, 31);
