@@ -592,8 +592,8 @@ endmodule
  * - 为了不至于干扰未连接本级Avalon接口的前级Avalon接口的工作：
  *   - 被选通的前级Avalon接口输出端信号列表 #nextp 中的输出向信号将仅连接至被选通的本级Avalon接口输入端信号列表 #sinkp 中的输入向信号；
  *   - 被选通的本级Avalon接口输入端信号列表 #sinkp 中的输出向信号将仅连接至被选通的前级Avalon接口输出端信号列表 #nextp 中的输入向信号。
- * - 对 #prevp_idx 和 #sinkp_idx ，当有多个选通信号为高电平时，在端口信号中比特位最低的信号被选中的优先级最高；
- * - 模块端口信号 #prevp_idx 说明的“信号输出时刻”指的是下图中 T0 时刻；
+ * - 对 #prevp_cs 和 #sinkp_cs ，当有多个选通信号为高电平时，在端口信号中比特位最低的信号被选中的优先级最高；
+ * - 模块端口信号 #prevp_cs 说明的“信号输出时刻”指的是下图中 T0 时刻；
  * - 模块端口信号 #sinkp_cs 说明的“信号从前级Avalon接口多路复用选通输出时刻”指的是下图中 T1 时刻。
  *                      |->T0
  *  clk:             ^__^^__^^__^^__^^
@@ -652,6 +652,8 @@ module avalon_linkmux_prevpbycs #(
       $error("avalon_linkmux_prevpbycs: LMC.prevPortMuxTaps(%0d) should not be zero while LMC.prevPortCnt(%0d) is greator than 1 or LMC.sinkPortBufSig(%0d) is 1.", prevpmuxtaps, prevport_cnt, sinkport_bufsig);
    localparam int prevp2mcstaps = prevpmuxtaps;// - (int'(sinkport_bufsig));
    localparam int sinkport_cnt = avalon_pkg::sinkPortCnt_of_linkMuxCfg(LMC);
+   initial if (sinkport_cnt > 1 && prevpmuxtaps < 1)
+      $warning("avalon_linkmux_prevpbycs: LMC.prevPortMuxTaps(%0d) is recommended to non-zero for better timing optimization while LMC.sinkPortCnt(%0d) is greator than 1", prevpmuxtaps, sinkport_cnt);
    initial if ($bits(sigs_t) != bitwof_sigs_t)
       $fatal("avalon_linkmux_prevpbycs: local parameter bitwof_sigs_t(%0d) does not match the bitwidth of sigs_t(%0d)", bitwof_sigs_t, $bits(sigs_t));
    localparam int bitwof_prevportidx = mux_pkg::idxbitw_ofmux(prevport_cnt);
@@ -664,25 +666,25 @@ module avalon_linkmux_prevpbycs #(
          $error("avalon_linkmux_prevpbycs: the bitwidth of port previfi[%0d].src_idx (%0d) does not match the other(sink_idx) port", $bits(previfi[i].src_idx), i);
       initial if (BITW_UNMATCH == 0 && $bits(previfi[i].src_cnt) != cntbitw)
          $error("avalon_linkmux_prevpbycs: the bitwidth of port previfi[%0d].src_cnt (%0d) does not match the other(sink_cnt) port", $bits(previfi[i].src_cnt), i);
-      assign previfi[i].src_blk = src_blks[i];
-      assign prev_sigs[i].sop      = previfi[i].src_sop;
-      assign prev_sigs[i].eop      = previfi[i].src_eop;
-      assign prev_sigs[i].valid    = previfi[i].src_valid;
-      assign prev_sigs[i].idx      = (idxbitw)'(previfi[i].src_idx);
-      assign prev_sigs[i].nxtidx   = (idxbitw)'(previfi[i].src_nxtidx);
-      assign prev_sigs[i].cnt      = (cntbitw)'(previfi[i].src_cnt);
+      assign previfi[i].src_blk = src_blks[i],
+             prev_sigs[i].sop    = previfi[i].src_sop,
+             prev_sigs[i].eop    = previfi[i].src_eop,
+             prev_sigs[i].valid  = previfi[i].src_valid,
+             prev_sigs[i].idx    = (idxbitw)'(previfi[i].src_idx),
+             prev_sigs[i].nxtidx = (idxbitw)'(previfi[i].src_nxtidx),
+             prev_sigs[i].cnt    = (cntbitw)'(previfi[i].src_cnt);
    end: PREV_PORTS
    for (i = 0; i < sinkport_cnt; i++) begin: SINK_PORTS
       initial if (BITW_UNMATCH == 0 && $bits(sinkifi[i].sink_idx) != idxbitw)
          $error("avalon_linkmux_prevpbycs: the bitwidth of port sinkifi[%0d].sink_idx (%0d) does not match the other(src_idx) ports", $bits(sinkifi[i].sink_idx), i);
       initial if (BITW_UNMATCH == 0 && $bits(sinkifi[i].sink_cnt) != cntbitw)
          $error("avalon_linkmux_prevpbycs: the bitwidth of port sinkifi[%0d].sink_cnt (%0d) does not match the other(src_cnt) ports", $bits(sinkifi[i].sink_cnt), i);
-      assign sinkifi[i].sink_sop      = sink_sigs[i].sop;
-      assign sinkifi[i].sink_eop      = sink_sigs[i].eop;
-      assign sinkifi[i].sink_valid    = sink_sigs[i].valid;
-      assign sinkifi[i].sink_idx      = (sinkidxbitw)'(sink_sigs[i].idx);
-      assign sinkifi[i].sink_nxtidx   = (sinkidxbitw)'(sink_sigs[i].nxtidx);
-      assign sinkifi[i].sink_cnt      = (sinkcntbitw)'(sink_sigs[i].cnt);
+      assign sinkifi[i].sink_sop    = sink_sigs[i].sop,
+             sinkifi[i].sink_eop    = sink_sigs[i].eop,
+             sinkifi[i].sink_valid  = sink_sigs[i].valid,
+             sinkifi[i].sink_idx    = (sinkidxbitw)'(sink_sigs[i].idx),
+             sinkifi[i].sink_nxtidx = (sinkidxbitw)'(sink_sigs[i].nxtidx),
+             sinkifi[i].sink_cnt    = (sinkcntbitw)'(sink_sigs[i].cnt);
    end: SINK_PORTS
    initial if (prevport_cnt != $bits(muxp.prevp_cs))
       $error("avalon_linkmux_prevpbycs: parameter LMC.prevPortCnt(%0d) does not match the bitwidth of auxp.prevp_cs(%0d)", avalon_pkg::prevPortCnt_of_linkMuxCfg(LMC), $size(muxp.prevp_cs, 1));
@@ -720,10 +722,10 @@ module avalon_linkmux_prevpbycs #(
          .cs         (prevp_cs&{(prevport_cnt){sinkp_cs[i]}}),
          .data_out   (prevsig_sel                           )
       );
-      assign muxp.sink_clk[i]   = sinkifi[i].clk;
-      assign muxp.sink_aclr[i]  = sinkifi[i].aclr;
-      assign muxp.sink_sclr[i]  = sinkifi[i].sclr;
-      assign muxp.sink_clken[i] = sinkifi[i].clken;
+      assign muxp.sink_clk[i]   = sinkifi[i].clk,
+             muxp.sink_aclr[i]  = sinkifi[i].aclr,
+             muxp.sink_sclr[i]  = sinkifi[i].sclr,
+             muxp.sink_clken[i] = sinkifi[i].clken;
       if      (i == 0)  assign sinkp_cs_pipe[i][0] = sinkp_cs[i];
       else if (MUXSINKP)assign sinkp_cs_pipe[i][0] = sinkp_cs[i] & (~(|sinkp_cs[i-1:0])); // \attention 不要从前级的 #sinkp_cs 级联产生 ~(|sinkp_cs[i-1:0]) ，因为这会导致组合逻辑电路路径过长，影响时序性能
       else              assign sinkp_cs_pipe[i][0] = sinkp_cs[i];
@@ -799,8 +801,8 @@ module avalon_linkmux_prevpbycs #(
          assign sink_sigs[i]        = sinksigs4connect;
       end
    end
-   assign combined_sinkblk_4prevports = (|sinkblk4prevports);
-   assign muxp.prevp_cs = prevp_cs;
+   assign combined_sinkblk_4prevports = (|sinkblk4prevports),
+          muxp.prevp_cs = prevp_cs;
    for (i = 0; i < prevport_cnt; i++) begin: PREV_SIGS
       wire autoblk_onprevp = prev_sigs[i].valid & blkprev4nocs[i];
       wire this_prevport_sel = muxp.prevp_cs[i];//(muxp.prevp_idx == (bitwof_prevportidx)'(i)) ? 1'b1 : 1'b0;
@@ -840,12 +842,12 @@ module avalon_linkmux_prevpbyidx #(
       .SELSIG_CNT (prevportCnt   ),
       .DELAYTAPS  (PREVPIDXPRSET )
    ) idx2cs(
-      .clk     (crp4idx2cs.clk   ),
-      .aclr    (crp4idx2cs.aclr  ),
-      .sclr    (crp4idx2cs.sclr  ),
-      .clken   (crp4idx2cs.clken ),
-      .idx     (prevp_idx        ),
-      .cs      (csofidx          )
+      .clk  (crp4idx2cs.clk   ),
+      .aclr (crp4idx2cs.aclr  ),
+      .sclr (crp4idx2cs.sclr  ),
+      .clken(crp4idx2cs.clken ),
+      .idx  (prevp_idx        ),
+      .cs   (csofidx          )
    );
    avalon_linkmux_prevpbycs #(
       .PREV_IC       (PREV_IC       ),
