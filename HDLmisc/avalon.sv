@@ -72,6 +72,42 @@
 `include "mux.svh"
 `define __INC_FROM_AVALON__
 `include "avalon.svh"
+module avalon_interface2moduleport #(
+   parameter avalon_pkg::ifCfg IC = avalon_pkg::deft_ifCfg
+) (
+   avalon_if.auxp                                           auxp,
+   output wire [avalon_pkg::bitwOfSinkIdx_of_ifCfg(IC)-1:0] sink_idx,
+   output wire [avalon_pkg::bitwOfSinkCnt_of_ifCfg(IC)-1:0] sink_cnt,
+   output wire                                              sink_valid,
+   output wire                                              sink_sop,
+   output wire                                              sink_eop,
+   output wire                                              sink_blk,
+   output wire                                              prcsr_blk,
+   output wire                                              usr_blk,
+   output wire [avalon_pkg::bitwOfSrcIdx_of_ifCfg(IC)-1:0]  src_idx,
+   output wire [avalon_pkg::bitwOfSrcCnt_of_ifCfg(IC)-1:0]  src_cnt,
+   output wire                                              src_valid,
+   output wire                                              src_sop,
+   output wire                                              src_eop,
+   output wire                                              src_blk,
+   output wire                                              src_bufsel
+);
+   assign sink_idx   = auxp.sink_idx,
+          sink_cnt   = auxp.sink_cnt,
+          sink_valid = auxp.sink_valid,
+          sink_sop   = auxp.sink_sop,
+          sink_eop   = auxp.sink_eop,
+          sink_blk   = auxp.sink_blk,
+          prcsr_blk  = auxp.prcsr_blk,
+          usr_blk    = auxp.usr_blk,
+          src_idx    = auxp.src_idx,
+          src_cnt    = auxp.src_cnt,
+          src_valid  = auxp.src_valid,
+          src_sop    = auxp.src_sop,
+          src_eop    = auxp.src_eop,
+          src_blk    = auxp.src_blk,
+          src_bufsel = auxp.src_bufsel;
+endmodule
 /*!
  * \brief 为Avalon接口准备输入端信号
  * \attention 当使用本模块来产生Avalon接口的输入端信号时，用户处理器应避免直接对 #avalon_if 接口中所有输入端信号进行写操作，
@@ -345,6 +381,36 @@ module avalon_makesink_fortdm #(
       .sink_blk   (sink_blk            )
    );
 endmodule
+module avalon_maketdm_onsink #(
+   parameter avalon_pkg::ifCfg TDMIC = avalon_pkg::deft_ifCfg
+) (
+   avalon_if    tdmifi,    ///< 时分复用分拍Avalon接口实例
+   input  wire  hostvalid, ///< 时分复用分拍宿主接口数据有效标志，高电平(1)有效
+   input  wire  hostprevld,///< 时分复用分拍宿主接口数据有效预报标志，高电平(1)有效，比 #hostvalid 提前一拍置位
+   output logic sink_blk   ///< 输入数据序列阻塞请求标志，高电平(1)有效。
+                           ///< \attention 
+                           ///< - 当 #sink_blk 置位时，本模块的输入数据计数器将暂停更新，此时用户应保持当前数据输入接口上的数据状态不更新，直
+                           ///< 到 #sink_blk 清零为止。否则本模块的输入数据计数器将与实际输入数据失去同步，可能造成数据丢失。
+                           ///< - 本结点的处理器在输出 #sink_blk 请求时还应综合考虑本模块输出的 #sink_blk 请求信号，用户甚至可以考虑直接将
+                           ///< 节点接口的 #sink_blk 变量连接至本信号端口上
+);
+   logic tdmsop;
+   always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(tdmifi.clk, tdmifi.aclr)) begin
+      if      (tdmifi.aclr) tdmsop <= 1'b0;
+      else if (tdmifi.sclr) tdmsop <= 1'b0;
+      else                  tdmsop <= (tdmifi.clken&(~tdmifi.sink_blk))
+                                      ? hostprevld&((~hostvalid)|tdmifi.sink_eop)
+                                      : tdmsop;
+   end
+   avalon_makesink_maxsink #(
+      .IC(TDMIC)
+   ) tdmsink(
+      .ifi  (tdmifi  ),
+      .sink_valid (hostvalid  ),
+      .sink_sop   (tdmsop     ),
+      .sink_blk   (sink_blk   )
+   );
+endmodule
 /*!
  * \brief Avalon接口产生输出端信号
  * \attention 当使用本模块来产生Avalon接口的输出端信号时，用户应避免直接对 #avalon_if 接口中的所有输出端信号执行写操作，
@@ -425,15 +491,16 @@ module avalon_directsrc #(
    if (BLKSINK_EN)assign sinkvalid2use = procp.sink_valid&(~blksink);
    else           assign sinkvalid2use = procp.sink_valid;
    endgenerate
-   assign procp.prcsr_blk  = prcsrblk_2use;
-   assign procp.sink_blk   = sinkblk_2use;
-   assign procp.src_cnt    = procp.sink_cnt;
-   assign procp.src_valid  = sinkvalid2use;
-   assign procp.src_sop    = procp.sink_sop;
-   assign procp.src_bufsel = '0;
-   assign srcp.src_idx     = procp.sink_idx;
-   assign srcp.src_nxtidx  = procp.sink_nxtidx;
-   assign srcp.src_eop     = procp.sink_eop;
+   assign procp.prcsr_blk  = prcsrblk_2use,
+          procp.sink_blk   = sinkblk_2use,
+          procp.usr_blk    = 1'b0,
+          procp.src_cnt    = procp.sink_cnt,
+          procp.src_valid  = sinkvalid2use,
+          procp.src_sop    = procp.sink_sop,
+          procp.src_bufsel = 1'b0,
+          srcp.src_idx     = procp.sink_idx,
+          srcp.src_nxtidx  = procp.sink_nxtidx,
+          srcp.src_eop     = procp.sink_eop;
 endmodule
 /*! \brief Avalon接口输出端完结链接 */
 module avalon_endsrc(
@@ -847,6 +914,7 @@ module avalon_linkmux_prevpbyidx #(
       .sclr (crp4idx2cs.sclr  ),
       .clken(crp4idx2cs.clken ),
       .idx  (prevp_idx        ),
+      .ivld (1'b1             ),
       .cs   (csofidx          )
    );
    avalon_linkmux_prevpbycs #(
@@ -1538,12 +1606,13 @@ module avalon_mirrormux_sinkbyidx #(
       .SELSIG_CNT (mirrorCnt     ),
       .DELAYTAPS  (MSINKIDXPRSET )
    ) idx2cs(
-      .clk     (ifi.clk    ),
-      .aclr    (ifi.aclr   ),
-      .sclr    (ifi.sclr   ),
-      .clken   (ifi.clken  ),
-      .idx     (msink_idx  ),
-      .cs      (msink_cs   )
+      .clk  (ifi.clk    ),
+      .aclr (ifi.aclr   ),
+      .sclr (ifi.sclr   ),
+      .clken(ifi.clken  ),
+      .idx  (msink_idx  ),
+      .ivld (1'b1       ),
+      .cs   (msink_cs   )
    );
    avalon_mirrormux_sinkbycs #(
       .SVR_IC        (SVR_IC        ),
@@ -2896,89 +2965,100 @@ module avalon_prcsrmake_4sink #(
       $error("avalon_prcsrmake_4sink : IC.prclat(%0d) should not be less than IC.bufSrc(%0d)", lat_ic, lat_bufsrc);
    localparam int bitwof_srccnt = avalon_pkg::bitwOfSrcCnt_of_ifCfg(IC);
    localparam bit pipe_prcsr = (bitwof_srccnt*lat_ic) < (2**bitwof_srccnt) ? 1'b1 : 1'b0;
-   wire blksink2use, blkprcsr2use;
+   wire blksink2use;
    generate
    if (BLKSINK_EN)assign blksink2use = blksink;
    else           assign blksink2use = 1'b0;
-   if(BLKPRCSR_EN)assign blkprcsr2use = blkprcsr;
-   else           assign blkprcsr2use = 1'b0;
    if ((PIPE_PRCSR|pipe_prcsr) == 1'b1) begin
-      localparam int bitwof_sinkidx = avalon_pkg::bitwOfSinkIdx_of_ifCfg(IC);
-      logic[2*bitwof_sinkidx+2:0]isig_pipesink, isig_pipe2prebuf;
-      assign isig_pipesink = {(procp.sink_valid&(~blksink2use)), procp.sink_sop, procp.sink_eop, procp.sink_idx, procp.sink_nxtidx};
-      // localparam int prclat_of_ic = avalon_pkg::prclat_of_ifCfg(IC);
-      localparam int lat2psrc = (lat_ic <= 1)
-                                ? 0
-                                : (lat_ic - 1);
-      wire prebuf_reseting;
-      avalon_auxsig_sync #(
-         .SIGBITW(2*bitwof_sinkidx + 3 ),
-         .LATENCY(lat2psrc             ),
-         .SCLRRAM(1'b1                 ),
-         .REG_PRI(1'b0                 )
-      ) pipe2prebuf_isig(
-         .clk     (crp.clk                      ),
-         .aclr    (crp.aclr                     ),
-         .sclr    (crp.sclr                     ),
-         .clken   (crp.clken&(~procp.prcsr_blk) ),
-         .sink_sig(isig_pipesink                ),
-         .src_sig (isig_pipe2prebuf             ),
-         .reseting(prebuf_reseting              )
-      );
-      localparam int lat2src = (lat_ic <= lat_bufsrc) ? 0 : 1;
-      wire[bitwof_sinkidx*2:0]idx_nxtidx_2src;
-      avalon_auxsig_sync #(
-         .SIGBITW(2*bitwof_sinkidx),
-         .LATENCY(lat2src              ),
-         .SCLRRAM(1'b0                 ),
-         .REG_PRI(1'b0                 )
-      ) pipe2buf_isig(
-         .clk     (crp.clk                               ),
-         .aclr    (crp.aclr                              ),
-         .sclr    (crp.sclr|prebuf_reseting              ),
-         .clken   (crp.clken&(~procp.prcsr_blk)          ),
-         .sink_sig(isig_pipe2prebuf[2*bitwof_sinkidx-1:0]),
-         .src_sig (idx_nxtidx_2src [2*bitwof_sinkidx-1:0]),
-         .reseting(                                      )
-      );
-      logic[2:0]  seqsflg2src;// 2:valid2src, 1:sop2src, 0:eop2src
-      if (lat2src > 0) begin
-         always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(crp.clk, crp.aclr)) begin
-            if      (crp.aclr)                 seqsflg2src <= 3'b000;
-            else if (crp.sclr|prebuf_reseting) seqsflg2src <= 3'b000;
-            else if (~crp.clken)               seqsflg2src <= seqsflg2src;
-            else if (procp.prcsr_blk)          seqsflg2src <= procp.src_blk
-                                                              ? seqsflg2src
-                                                              : 3'b000;
-            else                               seqsflg2src <= isig_pipe2prebuf[2*bitwof_sinkidx+2:2*bitwof_sinkidx];
+      if (lat_ic <= 0) begin
+         avalon_directsrc #(
+            .IC  (IC),
+            .BLKSINK_EN (BLKSINK_EN ),
+            .BLKPRCSR_EN(BLKPRCSR_EN)
+         ) dpi(
+            .procp   (procp   ),
+            .blksink (blksink ),
+            .blkprcsr(blkprcsr),
+            .srcp    (srcp    )
+         );
+      end else begin
+         localparam int bitwof_sinkidx = avalon_pkg::bitwOfSinkIdx_of_ifCfg(IC);
+         logic[2*bitwof_sinkidx+2:0]isig_pipesink, isig_pipe2prebuf;
+         assign isig_pipesink = {(procp.sink_valid&(~blksink2use)), procp.sink_sop, procp.sink_eop, procp.sink_idx, procp.sink_nxtidx};
+         // localparam int prclat_of_ic = avalon_pkg::prclat_of_ifCfg(IC);
+         localparam int lat2psrc = (lat_ic <= 1)
+                                 ? 0
+                                 : (lat_ic - 1);
+         wire prebuf_reseting;
+         avalon_auxsig_sync #(
+            .SIGBITW(2*bitwof_sinkidx + 3 ),
+            .LATENCY(lat2psrc             ),
+            .SCLRRAM(1'b1                 ),
+            .REG_PRI(1'b0                 )
+         ) pipe2prebuf_isig(
+            .clk     (crp.clk                      ),
+            .aclr    (crp.aclr                     ),
+            .sclr    (crp.sclr                     ),
+            .clken   (crp.clken&(~procp.prcsr_blk) ),
+            .sink_sig(isig_pipesink                ),
+            .src_sig (isig_pipe2prebuf             ),
+            .reseting(prebuf_reseting              )
+         );
+         localparam int lat2src = (lat_ic <= lat_bufsrc) ? 0 : 1;
+         wire[bitwof_sinkidx*2:0]idx_nxtidx_2src;
+         avalon_auxsig_sync #(
+            .SIGBITW(2*bitwof_sinkidx),
+            .LATENCY(lat2src              ),
+            .SCLRRAM(1'b0                 ),
+            .REG_PRI(1'b0                 )
+         ) pipe2buf_isig(
+            .clk     (crp.clk                               ),
+            .aclr    (crp.aclr                              ),
+            .sclr    (crp.sclr|prebuf_reseting              ),
+            .clken   (crp.clken&(~procp.prcsr_blk)          ),
+            .sink_sig(isig_pipe2prebuf[2*bitwof_sinkidx-1:0]),
+            .src_sig (idx_nxtidx_2src [2*bitwof_sinkidx-1:0]),
+            .reseting(                                      )
+         );
+         logic[2:0]  seqsflg2src;// 2:valid2src, 1:sop2src, 0:eop2src
+         if (lat2src > 0) begin
+            always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(crp.clk, crp.aclr)) begin
+               if      (crp.aclr)                 seqsflg2src <= 3'b000;
+               else if (crp.sclr|prebuf_reseting) seqsflg2src <= 3'b000;
+               else if (~crp.clken)               seqsflg2src <= seqsflg2src;
+               else if (procp.prcsr_blk)          seqsflg2src <= procp.src_blk
+                                                               ? seqsflg2src
+                                                               : 3'b000;
+               else                               seqsflg2src <= isig_pipe2prebuf[2*bitwof_sinkidx+2:2*bitwof_sinkidx];
+            end
          end
+         else assign seqsflg2src = (procp.prcsr_blk&(~procp.src_blk))
+                                 ? 3'b000
+                                 : isig_pipe2prebuf[2*bitwof_sinkidx+2:2*bitwof_sinkidx];
+         assign idx_nxtidx_2src[2*bitwof_sinkidx] = seqsflg2src[0];  // eop2src
+         avalon_prcsr_basic_mgr #(
+            .IC         (IC                  ),
+            .AUXBITW2SRC(2*bitwof_sinkidx + 1),
+            .MIRROR_SINK(MIRROR_SINK         ),
+            .BLKPRCSR_EN(BLKPRCSR_EN         ),
+            .BLKSINK_EN (1'b1                )
+         ) basic_prcsr_mgri(
+            .crp           (crp                                         ),
+            .procp         (procp                                       ),
+            .blksink       (blksink2use|prebuf_reseting                 ),
+            .blkprcsr      (blkprcsr                                    ),
+            .sop2src       (seqsflg2src[1]                              ),
+            .nxtsop2src    (isig_pipe2prebuf[2*bitwof_sinkidx+1]        ),
+            .valid2src     (seqsflg2src[2]                              ),
+            .nxtvalid2src  (isig_pipe2prebuf[2*bitwof_sinkidx+2]        ),
+            .aux2src       (idx_nxtidx_2src                             ),
+            .src_cnt       (src_cnt                                     ),
+            .srccnt_rdysig (srccnt_rdysig                               ),
+            .auxsrcd       ({srcp.src_eop,srcp.src_idx,srcp.src_nxtidx} ),
+            .running       (running                                     ),
+            .sclr2aclr     (sclr2aclr                                   )
+         );
       end
-      else assign seqsflg2src = (procp.prcsr_blk&(~procp.src_blk))
-                                ? 3'b000
-                                : isig_pipe2prebuf[2*bitwof_sinkidx+2:2*bitwof_sinkidx];
-      assign idx_nxtidx_2src[2*bitwof_sinkidx] = seqsflg2src[0];  // eop2src
-      avalon_prcsr_basic_mgr #(
-         .IC         (IC                  ),
-         .AUXBITW2SRC(2*bitwof_sinkidx + 1),
-         .MIRROR_SINK(MIRROR_SINK         ),
-         .BLKPRCSR_EN(BLKPRCSR_EN         ),
-         .BLKSINK_EN (1'b1                )
-      ) basic_prcsr_mgri(
-         .crp           (crp                                         ),
-         .procp         (procp                                       ),
-         .blksink       (blksink2use|prebuf_reseting                 ),
-         .blkprcsr      (blkprcsr                                    ),
-         .sop2src       (seqsflg2src[1]                              ),
-         .nxtsop2src    (isig_pipe2prebuf[2*bitwof_sinkidx+1]        ),
-         .valid2src     (seqsflg2src[2]                              ),
-         .nxtvalid2src  (isig_pipe2prebuf[2*bitwof_sinkidx+2]        ),
-         .aux2src       (idx_nxtidx_2src                             ),
-         .src_cnt       (src_cnt                                     ),
-         .srccnt_rdysig (srccnt_rdysig                               ),
-         .auxsrcd       ({srcp.src_eop,srcp.src_idx,srcp.src_nxtidx} ),
-         .running       (running                                     ),
-         .sclr2aclr     (sclr2aclr                                   )
-      );
    end else avalon_prcsrmake #(
          .IC         (IC         ),
          .TAPS2SRC   (lat_ic     ),
@@ -3187,8 +3267,18 @@ module avalon_tdmmake #(
                               ///< -# 建议输入经过寄存器整理时序后的信号，以降低Avlaon接口链表中的阻塞信号组合电路长度，避免影响电路时序性能。
 );
    localparam int maxSink = avalon_pkg::maxSink_of_ifCfg(TDMIC);
-   initial if (maxSink != 1)
-      $error("avalon_tdmmake : TDMIC.maxSink(%0d) should only be 1 for making tdm-signal", maxSink);
+   localparam int prclat_of_ic = avalon_pkg::prclat_of_ifCfg(TDMIC);
+   initial begin
+      if (maxSink != 1)
+         $error("avalon_tdmmake : TDMIC.maxSink(%0d) should only be 1 for making tdm-signal", maxSink);
+      if (prclat_of_ic < 1)
+         $error("avalon_tdmmake : TDMIC.prclat(%0d) should not be less than 1", prclat_of_ic);
+      // \attention 
+      // TDMIC.prclat <= 0 会因为 sink_valid 与 src_valid 在时间上重合，导致产生 prcsr_blk 、 src_blk 、 sink_blk 时
+      // 因 prcsr_blk 引用 #sink_blk 、 sink_blk 引用 #sink_valid 、 sink_valid 与 src_valid 重合 、 src_blk 引用 src_valid 相当于引用 sink_valid ，
+      // 从而产生组合逻辑赋值循环。
+      // 因此应在使用本模块时禁止处理时延为0，时延为0的处理需要单独设计模块产生。
+   end
    avalon_makesink_witheop #(
       .IC(TDMIC)
    ) tdm_sink(
@@ -3201,40 +3291,37 @@ module avalon_tdmmake #(
    );
    wire blksink2use;
    generate
-   if (BLKSINK_EN)assign blksink2use = blksink;
-   else           assign blksink2use = 1'b0;
-   endgenerate
-   wire[1:0]sigs2tdm, sigs_pretdm;
-   assign sigs2tdm = {(hsinkvalid&(~blksink2use)), (hs_syncsig&(~blksink2use))};
-   localparam int prclat_of_ic = avalon_pkg::prclat_of_ifCfg(TDMIC);
-   wire blkby_srceop = (~ifi.src_eop)&ifi.src_valid;
-   pipedelay_taps #(
-      .DATABITW   (2                                           ),
-      .DELAYTAPS  ((prclat_of_ic <= 1) ? 0 : (prclat_of_ic - 1))
-   ) pipe2pretdm(
-      .clk     (ifi.clk                   ),
-      .aclr    (ifi.aclr                  ),
-      .sclr    (ifi.sclr                  ),
-      .clken   (ifi.clken&(~ifi.prcsr_blk)),
-      .x       (sigs2tdm                  ),
-      .pipe_x  (sigs_pretdm               )
-   );
-   logic pretdmsop_hs_syncsig, valid2src;
-   edge_detectr #(
-      .EDGE_WANT  (1    ),
-      .CLKEN_PULS (1'b1 ),
-      .DELAY_OUT  (1'b0 ),
-      .CLKEN_OUT  (1'b0 )
-   ) pretdm_hs_syncsig_risingedge_chkr(
-      .clk        (ifi.clk                   ),
-      .aclr       (ifi.aclr                  ),
-      .sclr       (ifi.sclr                  ),
-      .clken_puls (ifi.clken&(~ifi.prcsr_blk)),
-      .insig      (sigs_pretdm[0]            ),
-      .clken_out  (1'b1                      ),
-      .edgsig     (pretdmsop_hs_syncsig      )
-   );
-   generate
+      if (BLKSINK_EN)assign blksink2use = blksink;
+      else           assign blksink2use = 1'b0;
+      wire[1:0]sigs2tdm, sigs_pretdm;
+      assign sigs2tdm = {(hsinkvalid&(~blksink2use)), (hs_syncsig&(~blksink2use))};
+      wire blkby_srceop = (~ifi.src_eop)&ifi.src_valid;
+      pipedelay_taps #(
+         .DATABITW   (2                                           ),
+         .DELAYTAPS  ((prclat_of_ic <= 1) ? 0 : (prclat_of_ic - 1))
+      ) pipe2pretdm(
+         .clk     (ifi.clk                   ),
+         .aclr    (ifi.aclr                  ),
+         .sclr    (ifi.sclr                  ),
+         .clken   (ifi.clken&(~ifi.prcsr_blk)),
+         .x       (sigs2tdm                  ),
+         .pipe_x  (sigs_pretdm               )
+      );
+      logic pretdmsop_hs_syncsig, valid2src;
+      edge_detectr #(
+         .EDGE_WANT  (1    ),
+         .CLKEN_PULS (1'b1 ),
+         .DELAY_OUT  (1'b0 ),
+         .CLKEN_OUT  (1'b0 )
+      ) pretdm_hs_syncsig_risingedge_chkr(
+         .clk        (ifi.clk                   ),
+         .aclr       (ifi.aclr                  ),
+         .sclr       (ifi.sclr                  ),
+         .clken_puls (ifi.clken&(~ifi.prcsr_blk)),
+         .insig      (sigs_pretdm[0]            ),
+         .clken_out  (1'b1                      ),
+         .edgsig     (pretdmsop_hs_syncsig      )
+      );
       if (prclat_of_ic > 0) begin
          always_ff @(`CLKTABLE_POSEDGE_ASYNC_CLR(ifi.clk, ifi.aclr)) begin
             if      (ifi.aclr)                  valid2src <= 1'b0;
