@@ -364,6 +364,7 @@ module packedarray_partadapter_byidx #(
       .sclr (sclr    ),
       .clken(1'b1    ),
       .idx  (idx     ),
+      .ivld (1'b1    ),
       .cs   (selsig  )
    );
    packedarray_partadapter_bycs #(
@@ -414,6 +415,7 @@ module unpackedarray_partadapter_byidx #(
       .sclr (sclr    ),
       .clken(1'b1    ),
       .idx  (idx     ),
+      .ivld (1'b1    ),
       .cs   (selsig  )
    );
    unpackedarray_partadapter_bycs #(
@@ -465,6 +467,7 @@ module packedarray_packedunit_partadapter_byidx #(
       .sclr (sclr    ),
       .clken(1'b1    ),
       .idx  (idx     ),
+      .ivld (1'b1    ),
       .cs   (selsig  )
    );
    packedarray_packedunit_partadapter_bycs #(
@@ -517,6 +520,7 @@ module unpackedarray_packedunit_partadapter_byidx #(
       .sclr (sclr    ),
       .clken(1'b1    ),
       .idx  (idx     ),
+      .ivld (1'b1    ),
       .cs   (selsig  )
    );
    unpackedarray_packedunit_partadapter_bycs #(
@@ -569,6 +573,7 @@ module unpackedarray_unpackedunit_partadapter_byidx #(
       .sclr (sclr    ),
       .clken(1'b1    ),
       .idx  (idx     ),
+      .ivld (1'b1    ),
       .cs   (selsig  )
    );
    unpackedarray_unpackedunit_partadapter_bycs #(

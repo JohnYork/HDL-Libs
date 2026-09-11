@@ -9,18 +9,19 @@
 module idx2selsig #(
    parameter int SELSIG_CNT = 4,
    parameter int DELAYTAPS  = 0
-) (clk, aclr, sclr, clken, idx, cs);
+) (clk, aclr, sclr, clken, idx, ivld, cs);
    input  bit                   clk;
    input  wire                  aclr;
    input  wire                  sclr;
    input  wire                  clken;
    localparam int bitwof_idx = miscs::minbitw_of_integer(SELSIG_CNT-1, 31);
    input  wire [bitwof_idx-1:0] idx;
+   input  wire                  ivld;
    output logic[SELSIG_CNT-1:0] cs;
 
    wire[SELSIG_CNT-1:0] cs2p;
    genvar i; generate for (i = 0; i < SELSIG_CNT; i++) begin: SELSIG_OFIDX
-      assign cs2p[i] = (idx == (bitwof_idx)'(i)) ? 1'b1 : 1'b0;
+      assign cs2p[i] = (idx == (bitwof_idx)'(i)) ? ivld : 1'b0;
    end endgenerate
    pipedelay_taps #(
       .DATABITW(SELSIG_CNT          ),

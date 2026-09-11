@@ -109,6 +109,7 @@ module partadapter_byidx #(
       .sclr (sclr    ),
       .clken(1'b1    ),
       .idx  (idx     ),
+      .ivld (1'b1    ),
       .cs   (selsig  )
    );
    partadapter #(
